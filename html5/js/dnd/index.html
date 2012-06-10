@@ -137,8 +137,8 @@
                     isConsonent = true;
 
                 for(; i < currLength ; i++) {
-                    isConsonent = (con == 0 ? vow :  //No more consonents
-                                  vow == 0 ? con :  //No more vowels
+                    isConsonent = (con == 0 ? false :  //No more consonents
+                                  vow == 0 ? true :  //No more vowels
                                   (i == 0 || vowels.indexOf(name[i - 1]) !== -1) ? Math.random() < 0.8 :   //Previous is a vowel or start of word, increase change of consonent
                                   Math.random() < 0.5);  //Previous is a consonent, give decent change for vowel
                     if(isConsonent) {
