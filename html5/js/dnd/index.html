@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+    <head><title>D&D Name Generator</title>
+        <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
+        <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js'></script>
+        <link type='text/css' href='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/themes/redmond/jquery-ui.css' rel='Stylesheet'/>
+
+        <style>
+            .ui-slider {
+                width:400px;
+            }
+
+            button {
+                margin-top:10px;
+                margin-bottom:25px;
+            }
+
+            h1 {
+                color: #163449;
+            }
+
+            h2, h3 {
+                color: #1F4966;
+            }
+
+            hr {
+                height: 3px;
+                background-color: #1F4966;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Dungeons and Dragons Name Generator</h1>
+
+        <h3>Length: <span id="spnLength"></span></h3>
+        
+        <div id="sliderLength"></div>
+        <h3>Consonents: <span id="spnConsonents"></span><br>
+        Vowels: <span id="spnVowels"></span></h3>
+        <div id="sliderConsonents"></div>
+
+        <h3>Names: <span id="spnNames"></span></h3>
+        <div id="sliderNames"></div>
+
+        <button>Refresh Names</button>
+
+        <hr>
+        <h2>Names</h2>
+        <ul id="lstNames">
+        </ul>
+
+        <script type='text/javascript'>
+            var minLength = 3;
+            var maxLength = 12;
+            var currLength = 6;
+            var currCon = 4;
+            var currVow = 2;
+            var currNames = 50;
+            $(function() {
+                   $("#sliderLength").slider({
+                        min: minLength,
+                        max: maxLength,
+                        value: currLength,
+                        slide: function( event, ui ) {
+                            currLength = parseInt(ui.value);
+                            $( "#spnLength" ).text( currLength );
+
+                            //If len < #consonents, lower # consonents
+                            currCon = Math.min(currCon, currLength);
+                            currVow = currLength - currCon;
+                            $( "#sliderConsonents").slider("option", "max", currLength);
+                            $( "#sliderConsonents").slider("value", currCon);
+                            $( "#spnConsonents" ).text(currCon);
+                            $( "#spnVowels" ).text( currVow );
+                        },
+                        create: function( event, ui ) {
+                            $("#spnLength").text(currLength);
+                        }
+                    });
+
+                
+                   $("#sliderConsonents").slider({
+                        value: currLength,
+                        slide: function( event, ui ) {
+                            currCon = parseInt(ui.value);
+                            currVow = currLength - currCon;
+                            $( "#spnConsonents" ).text(currCon);
+                            $( "#spnVowels" ).text( currVow );
+                        },
+                        create: function( event, ui ) {
+                            $( "#sliderConsonents").slider("option", "max", currLength);
+                            $( "#sliderConsonents").slider("value", currCon);
+                            $( "#spnConsonents" ).text(currCon);
+                            $( "#spnVowels" ).text( currLength - currCon);
+                        }
+                   });
+
+                   $("#sliderNames").slider({
+                        min: 10,
+                        max: 100,
+                        step: 10,
+                        value: currNames,
+                        slide: function( event, ui ) {
+                            currNames = ui.value;
+                            $("#spnNames").text(currNames);
+                        },
+                        create: function( event, ui ) {
+                            $("#spnNames").text(currNames);
+                        }
+                   });
+
+                   $("button").button();
+                   $("button").click(function() { 
+                       generate() 
+                   });
+            });
+
+            function generate() {
+                var names = [];
+                for(var i = 0; i < currNames; i++) {
+                    names.push(generateName());
+                }
+                names.sort();
+                $("#lstNames").empty();
+                for(var i = 0; i < currNames; i++) {
+                    $("#lstNames").append('<li>' + names[i] + '</li>');
+                }
+            }
+
+            function generateName() {
+                var consonents = ['b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'],
+                    vowels = ['a', 'e', 'i', 'o', 'u'],
+                    name = "",
+                    con = currCon,
+                    vow = currVow,
+                    i = 0,
+                    isConsonent = true;
+
+                for(; i < currLength ; i++) {
+                    isConsonent = (con == 0 ? vow :  //No more consonents
+                                  vow == 0 ? con :  //No more vowels
+                                  (i == 0 || vowels.indexOf(name[i - 1]) !== -1) ? Math.random() < 0.8 :   //Previous is a vowel or start of word, increase change of consonent
+                                  Math.random() < 0.5);  //Previous is a consonent, give decent change for vowel
+                    if(isConsonent) {
+                        name += consonents[Math.floor(Math.random() * consonents.length)];
+                        con--;
+                    } else {
+                        name += vowels[Math.floor(Math.random() * vowels.length)];
+                        vow--;
+                    }
+                }
+                
+                return name[0].toUpperCase() + name.slice(1);
+            }
+
+            function genRandom(start, end) {
+                return Math.floor(Math.random() * (end - start)) + start;
+            }
+        </script>
+    </body>
+</html>
