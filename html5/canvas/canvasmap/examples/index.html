@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Testing Canvas Map</title>
+        <script type='text/javascript' src="..\src\canvasmap.js"></script>
+        <style type="text/css">  
+          canvas { border: 1px solid black; }  
+        </style>  
+    </head>
+    <body>
+        <h3>Basic example</h3>
+        <canvas id="mainCanvas" width="450" height="450">
+        </canvas>  
+
+
+        <script type='text/javascript'>
+            var cm = new CanvasMap("mainCanvas");
+
+            var nodes = [ 
+                {    x : 20,
+                     y : 20,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 200,
+                     y : 200,
+                     r : 100,
+                     type : "circle"
+                },
+                {    x : 400,
+                     y : 50,
+                     r : 50,
+                     type : "circle"
+                },
+                {    x : 400,
+                     y : 400,
+                     r : 100,
+                     type : "circle"
+                }
+            ];
+            for(var i = 0, l = nodes.length; i < l; i++) {
+                cm.addNode(nodes[i]);
+            }
+            cm.addConnection(nodes[0], nodes[1]);
+            cm.addConnection(nodes[1], nodes[2]);
+            cm.addConnection(nodes[1], nodes[3]);
+        </script>
+    </body>
+</html>

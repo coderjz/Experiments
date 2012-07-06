@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Testing Canvas Map</title>
+        <script type='text/javascript' src="..\src\canvasmap.js"></script>
+        <style type="text/css">  
+          canvas { border: 1px solid black; }  
+        </style>  
+    </head>
+    <body>
+        <h3>Connect the dots</h3>
+        <p>Draw from the green circle to the red circle</p>
+
+        <select id="cmbShapes">
+            <option>1 (CheckMark)</option>
+            <option>2 (T)</option>
+        </select><br><br>
+
+
+        <canvas id="mainCanvas" width="450" height="450">
+        </canvas>  <br>
+        <input type="button" id="btnNextLine" value="Show next line">
+
+
+        <script type='text/javascript'>
+            var nodes = [ 
+                [
+                    {    x : 60,
+                         y : 200,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 110,
+                         y : 250,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 240,
+                         y : 50,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 290,
+                         y : 100,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 110,
+                         y : 320,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {
+                         x : 20,
+                         y : 240,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 60,
+                         y : 200,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    }
+                ],
+                [
+                    {    x : 30,
+                         y : 30,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 300,
+                         y : 30,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 300,
+                         y : 80,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 190,
+                         y : 80,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 190,
+                         y : 230,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 140,
+                         y : 230,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 140,
+                         y : 80,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 30,
+                         y : 80,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+                    {    x : 30,
+                         y : 30,
+                         r : 10,
+                         type : "circle",
+                         fill : "rgb(0, 0, 0)"
+                    },
+               ]
+            ];
+
+            var cm = new CanvasMap("mainCanvas");
+            var currNode = null;
+
+            function updateCanvas(pos) {
+                var canvas = document.getElementById("mainCanvas");
+                var context = canvas.getContext && canvas.getContext('2d');
+                if(context) {
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    nextConnection = 0;
+                }
+
+                currNode = nodes[pos];
+                for(var i = 0, l = currNode.length; i < l; i++) {
+                    cm.addNode(currNode[i]);
+                }
+            }
+
+            var nextConnection = 0;
+            function addConnection() {
+                if(nextConnection >= currNode.length - 1) {
+                    return;
+                }
+
+                cm.addConnection(currNode[nextConnection], currNode[nextConnection + 1]);
+                nextConnection++;
+            }
+
+
+            function domAddEvent(elem, event, fn) {
+                if(window.addEventListener) {
+                    elem.addEventListener(event, fn, false);
+                } else if(window.attachEvent) {
+                    elem.attachEvent('on' + event, fn);
+                } else {
+                    elem["on" + event] = fn;
+                }
+            }
+
+            domAddEvent(document.getElementById('cmbShapes'), 'change', function() {
+                var index = document.getElementById('cmbShapes').selectedIndex;
+                updateCanvas(index);
+            });
+            domAddEvent(document.getElementById('btnNextLine'), 'click', function() {
+                addConnection();
+            });
+
+
+            updateCanvas(0);
+
+            //Text TEST.
+            //TODO: Put text option in library itself (requires updating each shape to have a text drawing function that would consider the text to draw, text distance from outside edge, and angle of drawing text)
+            var canvas = document.getElementById("mainCanvas");
+            var context = canvas.getContext && canvas.getContext('2d');
+            context.font = "bold 18px 'Times New Roman', Times, serif"
+            context.fillText("1", 56, 184);
+            context.fillText("2", 106, 233);
+
+            //Drawing green circle TEST
+            context.fillStyle = "#08AD00";
+            context.strokeStyle = "#09BF00";
+            context.lineWidth = 2;
+            context.shadowColor="#0AD100";
+            context.shadowBlur = 5;       
+            context.beginPath();
+            context.arc(60, 200, 10, 0, 2 * Math.PI, true);
+            context.fill();
+            context.stroke();
+            context.closePath();
+
+            context.fillStyle = "#000000";
+            context.shadowColor= undefined; 
+            context.shadowBlur = undefined;       
+
+
+            //Drawing red circle Test
+            context.fillStyle = "#BC0F00";
+            context.strokeStyle = "#D80E00";
+            context.lineWidth = 2;
+            context.shadowColor="#E80B00";
+            context.shadowBlur = 5;       
+            context.beginPath();
+            context.arc(110, 250, 10, 0, 2 * Math.PI, true);
+            context.fill();
+            context.stroke();
+            context.closePath();
+
+            context.fillStyle = "#000000";
+            context.shadowColor= undefined; 
+            context.shadowBlur = undefined;       
+        </script>
+    </body>
+</html>
