@@ -18,6 +18,18 @@ CanvasMap = function(id, undefined) {
         return Math.atan2(yTo - yFrom, xTo - xFrom);
     }
 
+    //Current position canvas is translated
+    var originX = 0;
+    var originY = 0;
+
+    //Maximum x and y the canvas can be translated
+    //TODO: Update maxX and maxY based on drawn shapes and hit boxes
+    var maxX = 200;
+    var maxY = 200;
+
+    //How far zoomed in
+    var scale = 1;
+
     //Functions to draw nodes
     this.nodeTypes = {};
 
@@ -82,29 +94,44 @@ CanvasMap = function(id, undefined) {
 
     //Add a connection between nodes and render it immediately.
     this.addConnection = function(node1, node2) {
-        _connections.push([node1, node2]);
-        _renderConnection(node1, node2);
+        var c = [node1, node2];
+        _connections.push(c);
+        _renderConnection([c]);
     }
 
     //Render a connection between two nodes.
-    var _renderConnection = function(node1, node2) {
-        var f1 = that.nodeTypes[node1.type], 
-            f2 = that.nodeTypes[node2.type],
-            c1, c2, l1, l2;
-        if(f1 && f2) {
-            c1 = f1.center.apply(node1);
-            c2 = f2.center.apply(node2);
-            l1 = f1.connect.apply(node1, c2);
-            l2 = f2.connect.apply(node2, c1);
+    var _renderConnection = function(connections) {
+        var i, l, c1, c2, l1, l2, f1, f2, node1, node2;
+        for(i = 0, l = connections.length; i < l; i++) {
+            node1 = connections[i][0];
+            node2 = connections[i][1];
+            f1 = that.nodeTypes[node1.type]; 
+            f2 = that.nodeTypes[node2.type];
+            if(f1 && f2) {
+                c1 = f1.center.apply(node1);
+                c2 = f2.center.apply(node2);
+                l1 = f1.connect.apply(node1, c2);
+                l2 = f2.connect.apply(node2, c1);
 
-            context.beginPath();
-            context.moveTo(l1[0], l1[1]);
-            context.lineTo(l2[0], l2[1]);
-            context.stroke();
-            context.closePath();
+                context.beginPath();
+                context.moveTo(l1[0], l1[1]);
+                context.lineTo(l2[0], l2[1]);
+                context.stroke();
+                context.closePath();
+            }
         }
     }
 
+    //Redraw everything
+    this.redraw = function() {
+        //TODO: Test without the below line!
+        // Use identity matrix while clearing the canvas
+        //context.setTransform(1, 0, 0, 1, 0, 0);
+
+        context.clearRect(originX, originY, canvas.width, canvas.height);
+        _render(_nodes);
+        _renderConnection(_connections);
+    }
 
     //Generic method to attach an event to a DOM element.
     var _domAddEvent = function(elem, event, fn) {
@@ -120,7 +147,7 @@ CanvasMap = function(id, undefined) {
     //Function to verify which nodes should fire mouseenter, mouseleave, mouseover events.
     var _handleNodeMouseEvents = function(e) {
         e = e || window.event;
-        var pos = _getMouseCoords.call(canvas, e),
+        var pos = _translateMouseCoords(_getMouseCoords.call(canvas, e)),
             localMouseOver = [],
             nodePos = -1,
             eventType = "",
@@ -194,10 +221,16 @@ CanvasMap = function(id, undefined) {
         do {
             x += elem.offsetLeft;
             y += elem.offsetTop;
-        } while(elem = elem.offsetParent)
+        } while(elem = elem.offsetParent);
 
         return {x:event.pageX - x, 
                 y:event.pageY - y}
+    }
+
+    var _translateMouseCoords = function(pos) {
+        return {x : pos.x + originX,
+                y : pos.y + originY }
+         
     }
 
     //Object to store all functions that the node will fire on mouse enter, mouse leave, mouse move
@@ -254,6 +287,34 @@ CanvasMap = function(id, undefined) {
             }  
         }  
         return -1;  
+    }
+
+    this.moveLeft = function(delta) {
+        delta = Math.min(delta, originX);
+        context.translate(delta, 0);
+        originX -= delta;
+        that.redraw();
+    }
+
+    this.moveUp = function(delta) {
+        delta = Math.min(delta, originY);
+        context.translate(0, delta);
+        originY -= delta;
+        that.redraw();
+    }
+
+    this.moveDown = function(delta) {
+        delta = Math.min(delta, maxY - originY);
+        context.translate(0, delta * -1);
+        originY += delta;
+        that.redraw();
+    }
+
+    this.moveRight = function(delta) {
+        delta = Math.min(delta, maxX - originX);
+        context.translate(delta * -1, 0);
+        originX += delta;
+        that.redraw();
     }
 
 

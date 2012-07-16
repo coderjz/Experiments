@@ -4,13 +4,38 @@
         <title>Testing Canvas Map - Mouse Events</title>
         <script type='text/javascript' src="..\src\canvasmap.js"></script>
         <style type="text/css">  
-          canvas { border: 1px solid black; }  
+            canvas { border: 1px solid black; }  
+            .instructionBox {
+                float: left;
+                padding: 10px;
+                margin-right: 50px;
+                border: 1px solid black;
+                font-weight: bold;
+            }
+
+            .instructionBox input:first-of-type {
+                margin-top:20px;
+            }
+
+            .center {
+                margin : 0 auto;
+                text-align : center;
+            }
         </style>  
     </head>
     <body>
         <h3>Basic example</h3>
         <canvas id="mainCanvas" width="450" height="450">
         </canvas>  
+        <br>
+        <div class="instructionBox center">
+            Move <br>
+            <input type="button" onclick="cm.moveUp(50);" value="Up" /><br>
+            <input type="button" onclick="cm.moveLeft(50);" value="Left" />
+            <input type="button" onclick="cm.moveRight(50);" value="Right" /><br>
+            <input type="button" onclick="cm.moveDown(50);" value="Down" />
+        </div>
+
 
 
         <script type='text/javascript'>
@@ -35,6 +60,16 @@
                 {    x : 400,
                      y : 400,
                      r : 100,
+                     type : "circle"
+                },
+                {    x : 550,
+                     y : 550,
+                     r : 100,
+                     type : "circle"
+                },
+                {    x : 200,
+                     y : 500,
+                     r : 50,
                      type : "circle"
                 }
             ];
