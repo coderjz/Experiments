@@ -124,11 +124,10 @@ CanvasMap = function(id, undefined) {
 
     //Redraw everything
     this.redraw = function() {
-        //TODO: Test without the below line!
-        // Use identity matrix while clearing the canvas
-        //context.setTransform(1, 0, 0, 1, 0, 0);
+        console.log("Redraw.  Translate: (", originX, ",", originY, ").  Zoom: ", scale);
+        console.log("Clearing: ", originX / scale, ",", originY / scale, ",", canvas.width / scale, ",", canvas.height / scale);
 
-        context.clearRect(originX, originY, canvas.width, canvas.height);
+        context.clearRect(originX / scale, originY / scale, canvas.width / scale, canvas.height / scale);
         _render(_nodes);
         _renderConnection(_connections);
     }
@@ -228,8 +227,8 @@ CanvasMap = function(id, undefined) {
     }
 
     var _translateMouseCoords = function(pos) {
-        return {x : pos.x + originX,
-                y : pos.y + originY }
+        return {x : (pos.x + originX) / scale,
+                y : (pos.y + originY) / scale }
          
     }
 
@@ -291,29 +290,60 @@ CanvasMap = function(id, undefined) {
 
     this.moveLeft = function(delta) {
         delta = Math.min(delta, originX);
-        context.translate(delta, 0);
+        context.translate(delta / scale, 0);
         originX -= delta;
         that.redraw();
     }
 
     this.moveUp = function(delta) {
         delta = Math.min(delta, originY);
-        context.translate(0, delta);
+        context.translate(0, delta / scale);
         originY -= delta;
         that.redraw();
     }
 
     this.moveDown = function(delta) {
-        delta = Math.min(delta, maxY - originY);
-        context.translate(0, delta * -1);
+        var actualMaxY = (maxY * scale) + (scale - 1) * canvas.height;
+        delta = Math.min(delta, actualMaxY - originY);
+        context.translate(0, delta / scale * -1);
         originY += delta;
         that.redraw();
     }
 
     this.moveRight = function(delta) {
-        delta = Math.min(delta, maxX - originX);
-        context.translate(delta * -1, 0);
+        var actualMaxX = (maxX * scale) + (scale - 1) * canvas.width;
+        delta = Math.min(delta, actualMaxX - originX);
+        context.translate(delta / scale * -1, 0);
         originX += delta;
+        that.redraw();
+    }
+
+    this.zoomOut = function() {
+        that.zoom(0.8);
+    }
+
+    this.zoomIn = function() {
+        that.zoom(1.25);
+    }
+
+    this.zoom = function(scaleFactor) {
+        //First translate back to 0, 0
+        context.translate(-1 * originX / scale, -1 * originY / scale);
+        //Now scale
+        scale *= scaleFactor;
+        context.scale(scaleFactor, scaleFactor);
+        //Now translate back to place
+        context.translate(originX / scale, originY / scale);
+        that.redraw();
+    }
+
+    this.reset = function(scaleFactor) {
+        scale = 1;
+        originX = 0;
+        originY = 0;
+
+        //Use identity matrix to reset transform
+        context.setTransform(1, 0, 0, 1, 0, 0);
         that.redraw();
     }
 
