@@ -32,6 +32,7 @@ CanvasMap = function(id, undefined) {
     //Default line stroke and width
     var defaultStrokeWidth = 1;
     var defaultStrokeStyle = "black";
+    var defaultTextColor = "black";
 
     //Functions to draw nodes
     this.nodeTypes = {};
@@ -48,6 +49,13 @@ CanvasMap = function(id, undefined) {
             }
             context.arc(this.x, this.y, this.r, 0, 2 * Math.PI, true);
             context.stroke();
+            if(this.text) {
+                context.textAlign = "center";
+                context.textBaseline = 'middle';
+                var center = that.nodeTypes[this.type].center.apply(this);
+                context.fillStyle = defaultTextColor;
+                context.fillText(this.text, center[0], center[1]);
+            }
             if(this.fillStyle) {
                 context.fillStyle = this.fillStyle;
                 context.fill();
@@ -96,6 +104,13 @@ CanvasMap = function(id, undefined) {
             }
             context.rect(this.x, this.y, this.w, this.h);
             context.stroke();
+            if(this.text) {
+                context.textAlign = "center";
+                context.textBaseline = 'middle';
+                var center = that.nodeTypes[this.type].center.apply(this);
+                context.fillStyle = defaultTextColor;
+                context.fillText(this.text, center[0], center[1]);
+            }
             if(this.fillStyle) {
                 context.fillStyle = this.fillStyle;
                 context.fill();
