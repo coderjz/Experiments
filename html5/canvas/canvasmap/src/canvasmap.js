@@ -59,7 +59,7 @@ CanvasMap = function(id, undefined) {
             context.strokeStyle = defaultStrokeStyle;
         },
         //Gets the endpoint for a connection
-        connect : function(xTo, yTo) {
+        connect : function(xFrom, yFrom, xTo, yTo) {
             var ang = getAngle(this.x, this.y, xTo, yTo);
             return [Math.cos(ang) * this.r + this.x, Math.sin(ang) * this.r + this.y];
         },
@@ -81,6 +81,70 @@ CanvasMap = function(id, undefined) {
             var dx = Math.abs(x - this.x);
             var dy = Math.abs(y - this.y);
             return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)) <= this.r;
+        }
+    }
+
+    this.nodeTypes.rectangle = {
+        //Draws the rectangle
+        draw : function() {
+            context.beginPath();
+            if(this.strokeStyle) {
+                context.strokeStyle = this.strokeStyle;
+            }
+            if(this.strokeWidth) {
+                context.lineWidth = this.strokeWidth;
+            }
+            context.rect(this.x, this.y, this.w, this.h);
+            context.stroke();
+            if(this.fillStyle) {
+                context.fillStyle = this.fillStyle;
+                context.fill();
+            }
+            context.closePath();
+
+            //Reset defaults
+            context.lineWidth = defaultStrokeWidth;
+            context.strokeStyle = defaultStrokeStyle;
+        },
+
+        //Gets the endpoint for a connection
+        connect : function(xFrom, yFrom, xTo, yTo) {
+            var ang = getAngle(xFrom, yFrom, xTo, yTo);
+
+            //TODO: Fix this
+            //Suggested algorithm: http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=geometry2
+            //
+            //OR: http://stackoverflow.com/questions/1585525/how-to-find-the-intersection-point-between-a-line-and-a-rectangle
+/*The slope of the line is s = (Ay - By)/(Ax - Bx).
+
+If -h/2 <= s * w/2 <= h/2 then the line intersects:
+The right edge if Ax > Bx
+The left edge if Ax < Bx.
+If -w/2 <= (h/2)/s <= w/2 then the line intersects:
+The top edge if Ay > By
+The bottom edge if Ay < By.
+*/
+            return [xFrom + Math.cos(ang) * this.w / 2,
+                    yFrom + Math.sin(ang) * this.h / 2];
+        },
+        //Gets the center point
+        center : function() {
+            return [this.x + this.w / 2, this.y + this.h / 2];
+        },
+
+        //Bounding box for mouse over position
+        getBBox : function() {
+            return {
+                 l : this.x - this.w,
+                 r : this.x + this.w,
+                 t : this.y - this.h,
+                 b : this.y + this.h 
+            }
+        },
+        //Is the point (x, y) contained by this circle?
+        hitTest : function(x, y) {
+            return (x > this.x && x < this.x + this.w &&
+                    y > this.y && y < this.y + this.h);
         }
     }
 
@@ -125,8 +189,8 @@ CanvasMap = function(id, undefined) {
             if(f1 && f2) {
                 c1 = f1.center.apply(node1);
                 c2 = f2.center.apply(node2);
-                l1 = f1.connect.apply(node1, c2);
-                l2 = f2.connect.apply(node2, c1);
+                l1 = f1.connect.apply(node1, c1.concat(c2));
+                l2 = f2.connect.apply(node2, c2.concat(c1));
 
                 context.beginPath();
                 context.moveTo(l1[0], l1[1]);

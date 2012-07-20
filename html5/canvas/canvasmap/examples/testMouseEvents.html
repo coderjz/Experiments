@@ -70,6 +70,12 @@
                      r : 10,
                      type : "circle"
                 },
+                {    x : 100,
+                     y : 50,
+                     w : 80,
+                     h : 30,
+                     type : "rectangle"
+                },
                 {    x : 200,
                      y : 200,
                      r : 100,
@@ -102,6 +108,8 @@
             cm.addConnection(nodes[0], nodes[1]);
             cm.addConnection(nodes[1], nodes[2]);
             cm.addConnection(nodes[1], nodes[3]);
+            cm.addConnection(nodes[3], nodes[4]);
+            cm.addConnection(nodes[3], nodes[5]);
 
 
             cm.addNodeEnter(function(node) { 
