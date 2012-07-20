@@ -207,8 +207,8 @@ The bottom edge if Ay < By.
         console.log("Clearing: ", originX / scale, ",", originY / scale, ",", canvas.width / scale, ",", canvas.height / scale);
 
         context.clearRect(originX / scale, originY / scale, canvas.width / scale, canvas.height / scale);
-        _render(_nodes);
         _renderConnection(_connections);
+        _render(_nodes);
     }
 
     var _updateCanvasSize = function(node) {
