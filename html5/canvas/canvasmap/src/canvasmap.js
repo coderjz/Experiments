@@ -22,10 +22,9 @@ CanvasMap = function(id, undefined) {
     var originX = 0;
     var originY = 0;
 
-    //Maximum x and y the canvas can be translated
-    //TODO: Update maxX and maxY based on drawn shapes and hit boxes
-    var maxX = 200;
-    var maxY = 200;
+    //Total size of the canvas drawing.
+    var sizeX = 0;
+    var sizeY = 0;
 
     //How far zoomed in
     var scale = 1;
@@ -80,6 +79,7 @@ CanvasMap = function(id, undefined) {
     this.addNode = function(node) {
         _nodes.push(node);
         _render([node]);
+        _updateCanvasSize(node);
     } 
 
     //Method to Render one or more nodes
@@ -132,6 +132,30 @@ CanvasMap = function(id, undefined) {
         _renderConnection(_connections);
     }
 
+    var _updateCanvasSize = function(node) {
+        nodeType = that.nodeTypes[node.type];
+        bbox = nodeType.getBBox.apply(node);
+        sizeX = Math.max(sizeX, bbox.r);
+        sizeY = Math.max(sizeY, bbox.b);
+    }
+
+    //TODO: Calculate width/height properly, 
+    //TODO: Look at more optimal way of passing alternate context to redraw (does this code have race condition??  Kinda not because JS is single-threaded...)
+    this.saveImage = function() {
+        var origContext = context;
+        var c = document.createElement("canvas");
+        var width = sizeX;
+        var height = sizeY;
+        c.width = width;
+        c.height = height;
+        context = c.getContext("2d");
+
+        that.redraw();
+        context = origContext;
+
+        window.open(c.toDataURL(), "Canvas Image Data", "left=100,top=100");
+    }
+
     //Generic method to attach an event to a DOM element.
     var _domAddEvent = function(elem, event, fn) {
         if(elem.addEventListener) {
@@ -157,9 +181,6 @@ CanvasMap = function(id, undefined) {
 
         for(i = 0, l = _nodes.length; i < l; i++) {
             nodeType = that.nodeTypes[_nodes[i].type];
-            if(typeof(nodeType.getBBox) !== "function" || typeof(nodeType.hitTest) !== "function") {
-                continue;
-            }
             bbox = nodeType.getBBox.apply(_nodes[i]);
             
             //Is the node inside the bounding box?  If so, also check the hitTest function
@@ -303,7 +324,7 @@ CanvasMap = function(id, undefined) {
     }
 
     this.moveDown = function(delta) {
-        var actualMaxY = (maxY * scale) + (scale - 1) * canvas.height;
+        var actualMaxY = (sizeY - canvas.height) * scale + (scale - 1) * canvas.height;
         delta = Math.min(delta, actualMaxY - originY);
         context.translate(0, delta / scale * -1);
         originY += delta;
@@ -311,7 +332,7 @@ CanvasMap = function(id, undefined) {
     }
 
     this.moveRight = function(delta) {
-        var actualMaxX = (maxX * scale) + (scale - 1) * canvas.width;
+        var actualMaxX = (sizeX - canvas.width) * scale + (scale - 1) * canvas.width;
         delta = Math.min(delta, actualMaxX - originX);
         context.translate(delta / scale * -1, 0);
         originX += delta;

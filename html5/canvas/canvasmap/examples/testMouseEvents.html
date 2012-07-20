@@ -24,6 +24,10 @@
             .center {
                 text-align : center;
             }
+
+            .clear {
+                clear: both;
+            }
         </style>  
     </head>
     <body>
@@ -46,6 +50,13 @@
         <div class="instructionBox center">
             Reset<br>
             <input type="button" onclick="cm.reset();" value="Reset" />
+        </div>
+
+        <div class="clear"></div>
+        <br>
+        <div class="instructionBox center">
+            Save<br>
+            <input type="button" onclick="cm.saveImage();" value="Save" />
         </div>
 
 
