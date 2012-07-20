@@ -29,6 +29,10 @@ CanvasMap = function(id, undefined) {
     //How far zoomed in
     var scale = 1;
 
+    //Default line stroke and width
+    var defaultStrokeWidth = 1;
+    var defaultStrokeStyle = "black";
+
     //Functions to draw nodes
     this.nodeTypes = {};
 
@@ -36,12 +40,23 @@ CanvasMap = function(id, undefined) {
         //Draws the circle
         draw : function() {
             context.beginPath();
+            if(this.strokeStyle) {
+                context.strokeStyle = this.strokeStyle;
+            }
+            if(this.strokeWidth) {
+                context.lineWidth = this.strokeWidth;
+            }
             context.arc(this.x, this.y, this.r, 0, 2 * Math.PI, true);
             context.stroke();
-            if(this.fill) {
+            if(this.fillStyle) {
+                context.fillStyle = this.fillStyle;
                 context.fill();
             }
             context.closePath();
+
+            //Reset defaults
+            context.lineWidth = defaultStrokeWidth;
+            context.strokeStyle = defaultStrokeStyle;
         },
         //Gets the endpoint for a connection
         connect : function(xTo, yTo) {

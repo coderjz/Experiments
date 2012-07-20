@@ -106,6 +106,10 @@
 
             cm.addNodeEnter(function(node) { 
                     console.log("ENTERED: (" + node.x + "," + node.y + ")"); 
+                    node.strokeStyle = "green";
+                    node.fillStyle = "rgba(0, 100, 0, 0.3)";
+                    node.strokeWidth = 5;
+                    cm.redraw();
                     });
 
             cm.addNodeMove(function(node) { 
@@ -114,6 +118,10 @@
 
             cm.addNodeLeave(function(node) { 
                     console.log("LEAVE: (" + node.x + "," + node.y + ")"); 
+                    node.strokeStyle = null;
+                    node.fillStyle = null;
+                    node.strokeWidth = null;
+                    cm.redraw();
                     });
         </script>
 
