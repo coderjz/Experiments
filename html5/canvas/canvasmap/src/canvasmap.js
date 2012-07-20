@@ -33,6 +33,7 @@ CanvasMap = function(id, undefined) {
     var defaultStrokeWidth = 1;
     var defaultStrokeStyle = "black";
     var defaultTextColor = "black";
+    var defaultTextFont = "10px sans-serif";
 
     //Functions to draw nodes
     this.nodeTypes = {};
@@ -54,6 +55,7 @@ CanvasMap = function(id, undefined) {
                 context.textBaseline = 'middle';
                 var center = that.nodeTypes[this.type].center.apply(this);
                 context.fillStyle = defaultTextColor;
+                context.font = defaultTextFont;
                 context.fillText(this.text, center[0], center[1]);
             }
             if(this.fillStyle) {
@@ -141,6 +143,7 @@ The bottom edge if Ay < By.
 */
             return [xFrom + Math.cos(ang) * this.w / 2,
                     yFrom + Math.sin(ang) * this.h / 2];
+
         },
         //Gets the center point
         center : function() {
