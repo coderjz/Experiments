@@ -126,24 +126,34 @@ CanvasMap = function(id, undefined) {
 
         //Gets the endpoint for a connection
         connect : function(xFrom, yFrom, xTo, yTo) {
-            var ang = getAngle(xFrom, yFrom, xTo, yTo);
+            var slope = 0;
+            //First handle potential divide by zero error (infinite slope)
+            if(xFrom == xTo) {
+                if(yFrom < yTo) {
+                    return [xFrom, yFrom + (this.h / 2)];
+                } else {
+                    return [xFrom, yFrom - (this.h / 2)];
+                }
+            }
 
-            //TODO: Fix this
-            //Suggested algorithm: http://community.topcoder.com/tc?module=Static&d1=tutorials&d2=geometry2
-            //
-            //OR: http://stackoverflow.com/questions/1585525/how-to-find-the-intersection-point-between-a-line-and-a-rectangle
-/*The slope of the line is s = (Ay - By)/(Ax - Bx).
+            //Slope is yFrom - yTo because coordinates get bigger as we go down, unlike cartesian plane
+            slope = (yTo - yFrom) / (xTo - xFrom);
 
-If -h/2 <= s * w/2 <= h/2 then the line intersects:
-The right edge if Ax > Bx
-The left edge if Ax < Bx.
-If -w/2 <= (h/2)/s <= w/2 then the line intersects:
-The top edge if Ay > By
-The bottom edge if Ay < By.
-*/
-            return [xFrom + Math.cos(ang) * this.w / 2,
-                    yFrom + Math.sin(ang) * this.h / 2];
-
+            //If slope <= height / width AND slope >= - height / width, then must intersect left or right edge.  Else intersects top or bottom edge.
+            //Can see this by drawing line from center of rectangle to each corner.  Slope will be (sign) [height / 2 ] / (sign) [width / 2]
+            if(slope <= this.h / this.w && slope >= -1 * this.h / this.w) {
+                if(xFrom < xTo) {  //Right edge
+                    return [xFrom + (this.w / 2), yFrom + (slope * this.w / 2)];
+                } else { //Left edge
+                    return [xFrom - (this.w / 2), yFrom - (slope * this.w / 2)];
+                }
+            } else {
+                if(yFrom > yTo) { //Top edge
+                    return [xFrom - ((this.h / 2) / slope), yFrom - (this.h / 2)];
+                } else { //Bottom edge
+                    return [xFrom + ((this.h / 2) / slope), yFrom + (this.h / 2)];
+                }
+            }
         },
         //Gets the center point
         center : function() {

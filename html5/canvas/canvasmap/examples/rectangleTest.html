@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Testing Canvas Map - Mouse Events</title>
+        <script type='text/javascript' src="..\src\canvasmap.js"></script>
+        <style type="text/css">  
+            canvas { border: 1px solid black; }  
+            .instructionBox {
+                float: left;
+                padding: 10px;
+                margin-right: 50px;
+                border: 1px solid black;
+                font-weight: bold;
+            }
+
+            .instructionBox input:first-of-type {
+                margin-top:20px;
+            }
+
+            .instructionBox input {
+                min-width: 50px;
+            }
+
+            .center {
+                text-align : center;
+            }
+
+            .clear {
+                clear: both;
+            }
+        </style>  
+    </head>
+    <body>
+        <h3>Basic example</h3>
+        <canvas id="mainCanvas" width="450" height="450">
+        </canvas>  
+        <br>
+        <div class="instructionBox center">
+            Move <br>
+            <input type="button" onclick="cm.moveUp(50);" value="Up" /><br>
+            <input type="button" onclick="cm.moveLeft(50);" value="Left" />
+            <input type="button" onclick="cm.moveRight(50);" value="Right" /><br>
+            <input type="button" onclick="cm.moveDown(50);" value="Down" />
+        </div>
+        <div class="instructionBox center">
+            Zoom <br>
+            <input type="button" onclick="cm.zoomIn();" value="In" /><br>
+            <input type="button" onclick="cm.zoomOut();" value="Out" />
+        </div>
+        <div class="instructionBox center">
+            Reset<br>
+            <input type="button" onclick="cm.reset();" value="Reset" />
+        </div>
+
+        <div class="clear"></div>
+        <br>
+        <div class="instructionBox center">
+            Save<br>
+            <input type="button" onclick="cm.saveImage();" value="Save" />
+        </div>
+
+
+
+        <script type='text/javascript'>
+            var cm = new CanvasMap("mainCanvas");
+
+            var nodes = [ 
+                {    x : 100,
+                     y : 100,
+                     w : 80,
+                     h : 30,
+                     text : "rect..",
+                     type : "rectangle"
+                },
+                {    x : 20,
+                     y : 20,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 60,
+                     y : 20,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 100,
+                     y : 20,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 140,
+                     y : 20,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 180,
+                     y : 20,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 220,
+                     y : 20,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 260,
+                     y : 20,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 260,
+                     y : 60,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 260,
+                     y : 88,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 260,
+                     y : 115,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 260,
+                     y : 142,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 260,
+                     y : 170,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 20,
+                     y : 60,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 20,
+                     y : 88,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 20,
+                     y : 115,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 20,
+                     y : 142,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 20,
+                     y : 170,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 60,
+                     y : 170,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 100,
+                     y : 170,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 140,
+                     y : 170,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 180,
+                     y : 170,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 220,
+                     y : 170,
+                     r : 10,
+                     type : "circle"
+                },
+                {    x : 300,
+                     y : 170,
+                     w : 10,
+                     h : 100,
+                     type : "rectangle"
+                },
+                {    x : 370,
+                     y : 170,
+                     w : 60,
+                     h : 20,
+                     type : "rectangle"
+                },
+
+            ];
+            for(var i = 0, l = nodes.length; i < l; i++) {
+                cm.addNode(nodes[i]);
+            }
+            for(i = 1; i < l - 2; i++) {
+                cm.addConnection(nodes[0], nodes[i]);
+            }
+            cm.addConnection(nodes[l - 2], nodes[l - 1]);
+
+
+            cm.addNodeEnter(function(node) { 
+                    console.log("ENTERED: (" + node.x + "," + node.y + ")"); 
+                    node.strokeStyle = "green";
+                    node.fillStyle = "rgba(0, 100, 0, 0.3)";
+                    node.strokeWidth = 5;
+                    cm.redraw();
+                    });
+
+            cm.addNodeMove(function(node) { 
+            //        console.log("MOVE: (" + node.x + "," + node.y + ")"); 
+                    });
+
+            cm.addNodeLeave(function(node) { 
+                    console.log("LEAVE: (" + node.x + "," + node.y + ")"); 
+                    node.strokeStyle = null;
+                    node.fillStyle = null;
+                    node.strokeWidth = null;
+                    cm.redraw();
+                    });
+        </script>
+
+
+    </body>
+</html>
