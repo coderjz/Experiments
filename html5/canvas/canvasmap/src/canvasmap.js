@@ -38,6 +38,9 @@ CanvasMap = function(id, undefined) {
     //Functions to draw nodes
     this.nodeTypes = {};
 
+    //x: center x position
+    //y: center y position
+    //r: circle radius
     this.nodeTypes.circle = {
         //Draws the circle
         draw : function() {
@@ -94,6 +97,10 @@ CanvasMap = function(id, undefined) {
         }
     }
 
+    //x: left x position
+    //y: top y position
+    //w: rectangle width
+    //h: rectangle height
     this.nodeTypes.rectangle = {
         //Draws the rectangle
         draw : function() {
