@@ -101,10 +101,9 @@ CanvasMap = function(id, undefined) {
             if(this.text) {
                 context.textAlign = "center";
                 context.textBaseline = 'middle';
-                var center = that.nodeTypes[this.type].center.apply(this);
                 context.fillStyle = defaultTextColor;
                 context.font = defaultTextFont;
-                context.fillText(this.text, center[0], center[1]);
+                context.fillText(this.text, this.x, this.y);
             }
             if(this.fillStyle) {
                 context.fillStyle = this.fillStyle;
@@ -117,13 +116,9 @@ CanvasMap = function(id, undefined) {
             context.strokeStyle = defaultStrokeStyle;
         },
         //Gets the endpoint for a connection
-        connect : function(xFrom, yFrom, xTo, yTo) {
+        connect : function(xTo, yTo) {
             var ang = getAngle(this.x, this.y, xTo, yTo);
             return [Math.cos(ang) * this.r + this.x, Math.sin(ang) * this.r + this.y];
-        },
-        //Gets the center point
-        center : function() {
-            return [this.x, this.y];
         },
         //Bounding box for mouse over position
         getBBox : function() {
@@ -142,8 +137,8 @@ CanvasMap = function(id, undefined) {
         }
     }
 
-    //x: left x position
-    //y: top y position
+    //x: center x position
+    //y: center y position
     //w: rectangle width
     //h: rectangle height
     this.nodeTypes.rectangle = {
@@ -156,14 +151,13 @@ CanvasMap = function(id, undefined) {
             if(this.strokeWidth) {
                 context.lineWidth = this.strokeWidth;
             }
-            context.rect(this.x, this.y, this.w, this.h);
+            context.rect(this.x - (this.w / 2), this.y - (this.h / 2), this.w, this.h);
             context.stroke();
             if(this.text) {
                 context.textAlign = "center";
                 context.textBaseline = 'middle';
-                var center = that.nodeTypes[this.type].center.apply(this);
                 context.fillStyle = defaultTextColor;
-                context.fillText(this.text, center[0], center[1]);
+                context.fillText(this.text, this.x, this.y);
             }
             if(this.fillStyle) {
                 context.fillStyle = this.fillStyle;
@@ -177,54 +171,49 @@ CanvasMap = function(id, undefined) {
         },
 
         //Gets the endpoint for a connection
-        connect : function(xFrom, yFrom, xTo, yTo) {
+        connect : function(xTo, yTo) {
             var slope = 0;
             //First handle potential divide by zero error (infinite slope)
-            if(xFrom == xTo) {
-                if(yFrom < yTo) {
-                    return [xFrom, yFrom + (this.h / 2)];
+            if(this.x == xTo) {
+                if(this.y < yTo) {
+                    return [this.x, this.y + (this.h / 2)];
                 } else {
-                    return [xFrom, yFrom - (this.h / 2)];
+                    return [this.x, this.y - (this.h / 2)];
                 }
             }
 
-            //Slope is yFrom - yTo because coordinates get bigger as we go down, unlike cartesian plane
-            slope = (yTo - yFrom) / (xTo - xFrom);
+            //Slope is this.y - yTo because coordinates get bigger as we go down, unlike cartesian plane
+            slope = (yTo - this.y) / (xTo - this.x);
 
             //If slope <= height / width AND slope >= - height / width, then must intersect left or right edge.  Else intersects top or bottom edge.
             //Can see this by drawing line from center of rectangle to each corner.  Slope will be (sign) [height / 2 ] / (sign) [width / 2]
             if(slope <= this.h / this.w && slope >= -1 * this.h / this.w) {
-                if(xFrom < xTo) {  //Right edge
-                    return [xFrom + (this.w / 2), yFrom + (slope * this.w / 2)];
+                if(this.x < xTo) {  //Right edge
+                    return [this.x + (this.w / 2), this.y + (slope * this.w / 2)];
                 } else { //Left edge
-                    return [xFrom - (this.w / 2), yFrom - (slope * this.w / 2)];
+                    return [this.x - (this.w / 2), this.y - (slope * this.w / 2)];
                 }
             } else {
-                if(yFrom > yTo) { //Top edge
-                    return [xFrom - ((this.h / 2) / slope), yFrom - (this.h / 2)];
+                if(this.y > yTo) { //Top edge
+                    return [this.x - ((this.h / 2) / slope), this.y - (this.h / 2)];
                 } else { //Bottom edge
-                    return [xFrom + ((this.h / 2) / slope), yFrom + (this.h / 2)];
+                    return [this.x + ((this.h / 2) / slope), this.y + (this.h / 2)];
                 }
             }
         },
-        //Gets the center point
-        center : function() {
-            return [this.x + this.w / 2, this.y + this.h / 2];
-        },
-
         //Bounding box for mouse over position
         getBBox : function() {
             return {
-                 l : this.x - this.w,
-                 r : this.x + this.w,
-                 t : this.y - this.h,
-                 b : this.y + this.h 
+                 l : this.x - (this.w / 2),
+                 r : this.x + (this.w / 2),
+                 t : this.y - (this.h / 2),
+                 b : this.y + (this.h / 2) 
             }
         },
         //Is the point (x, y) contained by this circle?
         hitTest : function(x, y) {
-            return (x > this.x && x < this.x + this.w &&
-                    y > this.y && y < this.y + this.h);
+            return (x > this.x - (this.w / 2) && x < (this.x + this.w / 2) &&
+                    y > this.y - (this.h / 2) && y < (this.y + this.h / 2));
         }
     }
 
@@ -257,9 +246,8 @@ CanvasMap = function(id, undefined) {
             if(this.text) {
                 context.textAlign = "center";
                 context.textBaseline = 'middle';
-                var center = that.nodeTypes[this.type].center.apply(this);
                 context.fillStyle = defaultTextColor;
-                context.fillText(this.text, center[0], center[1]);
+                context.fillText(this.text, this.x, this.y);
             }
             if(this.fillStyle) {
                 context.fillStyle = this.fillStyle;
@@ -272,9 +260,9 @@ CanvasMap = function(id, undefined) {
             context.strokeStyle = defaultStrokeStyle;
         },
         //Gets the endpoint for a connection
-        connect : function(xFrom, yFrom, xTo, yTo) {
+        connect : function(xTo, yTo) {
             var v = that.nodeTypes[this.type].vertices.apply(this),
-            i = 0, l, p3 = {x : xFrom, y : yFrom}, p4 = {x : xTo, y : yTo}, intersect;
+            i = 0, l, p3 = {x : this.x, y : this.y}, p4 = {x : xTo, y : yTo}, intersect;
             v = v.concat(v[0]);
 
             for(i = 0, l = v.length - 1; i < l; i++) {
@@ -284,10 +272,6 @@ CanvasMap = function(id, undefined) {
                 }
             }
             return null;
-        },
-        //Gets the center point
-        center : function() {
-            return [this.x, this.y];
         },
         //Bounding box for mouse over position
         getBBox : function() {
@@ -346,17 +330,15 @@ CanvasMap = function(id, undefined) {
 
     //Render a connection between two nodes.
     var _renderConnection = function(connections) {
-        var i, l, c1, c2, l1, l2, f1, f2, node1, node2;
+        var i, l, l1, l2, f1, f2, node1, node2;
         for(i = 0, l = connections.length; i < l; i++) {
             node1 = connections[i][0];
             node2 = connections[i][1];
             f1 = that.nodeTypes[node1.type]; 
             f2 = that.nodeTypes[node2.type];
             if(f1 && f2) {
-                c1 = f1.center.apply(node1);
-                c2 = f2.center.apply(node2);
-                l1 = f1.connect.apply(node1, c1.concat(c2));
-                l2 = f2.connect.apply(node2, c2.concat(c1));
+                l1 = f1.connect.apply(node1, [node2.x, node2.y]);
+                l2 = f2.connect.apply(node2, [node1.x, node1.y]);
 
                 context.beginPath();
                 context.moveTo(l1[0], l1[1]);
