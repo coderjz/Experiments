@@ -35,6 +35,51 @@ CanvasMap = function(id, undefined) {
     var defaultTextColor = "black";
     var defaultTextFont = "10px sans-serif";
 
+
+    //Mathematical functions
+    this.math = {
+        //Source: http://jsfromhell.com/math/is-point-in-poly
+        //Checks whether the point is inside the polygon.
+        //polygon array of points, each element must be an object with two properties (x and y).  The first and last point should match.
+        //point, object with two properties (x and y)
+        pointInPoly : function(poly, pt) {
+            for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
+                ((poly[i].y <= pt.y && pt.y < poly[j].y) || (poly[j].y <= pt.y && pt.y < poly[i].y))
+                && (pt.x < (poly[j].x - poly[i].x) * (pt.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x)
+                && (c = !c);
+            return c;
+        },
+
+        //Two dimensional cross product defined as: p1x * p2y - p2x * p1y
+        //Returns a scalar numeric value
+        crossProduct2D : function(p1, p2) {
+            return (p1.x * p2.y) - (p2.x * p1.y);
+        },
+
+
+        //Source: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+        //Expects four points each with x and y properties.  First two points form a line segment, last two points form other line segment
+        //Returns an object with x and y if the line segments intersect.
+        //Returns null if no intersection
+        lineSegmentIntersect : function(p1, p2, p3, p4) {
+            var r = {x : p2.x - p1.x, y : p2.y - p1.y},
+                s = {x : p4.x - p3.x, y : p4.y - p3.y},
+                rs = this.crossProduct2D(r, s),
+                t, u,
+                v = {x : p3.x - p1.x, y : p3.y - p1.y};
+            if(rs === 0) {
+                return null;
+            }
+            t = this.crossProduct2D(v, s) / rs;
+            u = this.crossProduct2D(v, r) / rs;
+            if(t < 0 || t > 1 || u < 0 || u > 1) {
+                return null;
+            }
+
+            return {x: p1.x + (p2.x - p1.x) * t, y : p1.y + (p2.y - p1.y) * t};
+        }
+    };
+
     //Functions to draw nodes
     this.nodeTypes = {};
 
@@ -180,6 +225,88 @@ CanvasMap = function(id, undefined) {
         hitTest : function(x, y) {
             return (x > this.x && x < this.x + this.w &&
                     y > this.y && y < this.y + this.h);
+        }
+    }
+
+    //x: center x position
+    //y: center y position
+    //a: trapezoid bottom width
+    //b: trapezoid top width
+    //h: trapezoid height
+    this.nodeTypes.trapezoid = {
+        //Draws the rectangle
+        draw : function() {
+            context.beginPath();
+            if(this.strokeStyle) {
+                context.strokeStyle = this.strokeStyle;
+            }
+            if(this.strokeWidth) {
+                context.lineWidth = this.strokeWidth;
+            }
+            context.moveTo(this.x - this.a / 2, this.y + this.h / 2);  //bottom-left
+            context.lineTo(this.x + this.a / 2, this.y + this.h / 2);  //bottom-right
+            context.lineTo(this.x + this.b / 2, this.y - this.h / 2);  //top-right
+            context.lineTo(this.x - this.b / 2, this.y - this.h / 2);  //top-left
+            context.lineTo(this.x - this.a / 2, this.y + this.h / 2);  //bottom-left (close path)
+            context.lineTo(this.x + this.a / 2, this.y + this.h / 2);  //bottom-right (doing this extra line helps the outside stroke look cleaner)
+            context.stroke();
+            if(this.text) {
+                context.textAlign = "center";
+                context.textBaseline = 'middle';
+                var center = that.nodeTypes[this.type].center.apply(this);
+                context.fillStyle = defaultTextColor;
+                context.fillText(this.text, center[0], center[1]);
+            }
+            if(this.fillStyle) {
+                context.fillStyle = this.fillStyle;
+                context.fill();
+            }
+            context.closePath();
+
+            //Reset defaults
+            context.lineWidth = defaultStrokeWidth;
+            context.strokeStyle = defaultStrokeStyle;
+        },
+        //Gets the endpoint for a connection
+        connect : function(xFrom, yFrom, xTo, yTo) {
+            var v = that.nodeTypes[this.type].vertices.apply(this),
+            i = 0, l, p3 = {x : xFrom, y : yFrom}, p4 = {x : xTo, y : yTo}, intersect;
+            v = v.concat(v[0]);
+
+            for(i = 0, l = v.length - 1; i < l; i++) {
+                intersect = that.math.lineSegmentIntersect(v[i], v[i + 1], p3, p4);
+                if(intersect) {
+                    return [intersect.x, intersect.y];
+                }
+            }
+            return null;
+        },
+        //Gets the center point
+        center : function() {
+            return [this.x, this.y];
+        },
+        //Bounding box for mouse over position
+        getBBox : function() {
+            return {
+                 l : this.x - Math.max(this.a, this.b) / 2,
+                 r : this.x + Math.max(this.a, this.b) / 2,
+                 t : this.y - this.h / 2,
+                 b : this.y + this.h / 2 
+            }
+        },
+        //Is the point (x, y) contained by this circle?
+        hitTest : function(x, y) {
+            var v = that.nodeTypes[this.type].vertices.apply(this);
+            return that.math.pointInPoly(v.concat(v[0]), {x : x, y : y});
+        },
+
+        vertices : function() {
+            return [
+                {x : this.x - this.a / 2, y : this.y + this.h / 2},  //bottom-left
+                {x : this.x + this.a / 2, y : this.y + this.h / 2},  //bottom-right
+                {x : this.x + this.b / 2, y : this.y - this.h / 2},  //top-right
+                {x : this.x - this.b / 2, y : this.y - this.h / 2}   //top-left
+            ];
         }
     }
 
