@@ -236,6 +236,8 @@ CanvasMap = function(id, undefined) {
     this.nodeTypes.trapezoid = {
         //Draws the rectangle
         draw : function() {
+            var v = that.nodeTypes[this.type].vertices.apply(this),
+                i, l;
             context.beginPath();
             if(this.strokeStyle) {
                 context.strokeStyle = this.strokeStyle;
@@ -243,12 +245,14 @@ CanvasMap = function(id, undefined) {
             if(this.strokeWidth) {
                 context.lineWidth = this.strokeWidth;
             }
-            context.moveTo(this.x - this.a / 2, this.y + this.h / 2);  //bottom-left
-            context.lineTo(this.x + this.a / 2, this.y + this.h / 2);  //bottom-right
-            context.lineTo(this.x + this.b / 2, this.y - this.h / 2);  //top-right
-            context.lineTo(this.x - this.b / 2, this.y - this.h / 2);  //top-left
-            context.lineTo(this.x - this.a / 2, this.y + this.h / 2);  //bottom-left (close path)
-            context.lineTo(this.x + this.a / 2, this.y + this.h / 2);  //bottom-right (doing this extra line helps the outside stroke look cleaner)
+
+            context.moveTo(v[0].x, v[0].y);
+            for(var i = 1, l = v.length; i < l; i++) {
+                context.lineTo(v[i].x, v[i].y);
+            }
+            context.lineTo(v[0].x, v[0].y);  //Close the polygon
+            context.lineTo(v[1].x, v[1].y);  //Drawing this line twice helps it look better when border is thick.
+
             context.stroke();
             if(this.text) {
                 context.textAlign = "center";
