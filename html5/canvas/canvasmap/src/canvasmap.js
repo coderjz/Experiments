@@ -357,6 +357,8 @@ CanvasMap = function(id, undefined) {
         context.clearRect(originX / scale, originY / scale, canvas.width / scale, canvas.height / scale);
         _renderConnection(_connections);
         _render(_nodes);
+
+        scrollbars.redraw();
     }
 
     var _updateCanvasSize = function(node) {
@@ -406,6 +408,9 @@ CanvasMap = function(id, undefined) {
             nodeType, 
             bbox;
 
+        //First, update scrollbars.
+        scrollbars.updateMove(pos);
+
         for(i = 0, l = _nodes.length; i < l; i++) {
             nodeType = that.nodeTypes[_nodes[i].type];
             bbox = nodeType.getBBox.apply(_nodes[i]);
@@ -449,6 +454,22 @@ CanvasMap = function(id, undefined) {
             _invokeNodeMouseEvent(_mouseOverNodes[i], "leave");
         }
         _mouseOverNodes = []; 
+
+        //Prevent scrollbars from dragging if leave canvas and come back in.
+        scrollbars.endDrag();
+    }
+
+    //Mouse down
+    _handleMouseDown = function(e) {
+        scrollbars.beginDrag(_translateMouseCoords(_getMouseCoords.call(canvas, e)));
+
+        //Prevent change of cursor to selection.  Code from: http://stackoverflow.com/questions/2659999/html5-canvas-hand-cursor-problems
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    _handleMouseUp = function(e) {
+        scrollbars.endDrag();
     }
 
     var _invokeNodeMouseEvent = function(node, eventType) {
@@ -536,7 +557,176 @@ CanvasMap = function(id, undefined) {
         return -1;  
     }
 
+    var scrollbars = {
+        showVertical : true,
+        showHorizontal : true,
+        margin : 8, //In pixels, assume same margin for all four sides
+        width : 15, //In pixels, assume same scrollbar width for both horizontal and vertical 
+        horizDragPos : -1, //In pixels, last position of dragging horizontal scrollbar.  -1 means no drag.
+        vertDragPos : -1, //In pixels, last position of dragging horizontal scrollbar.  -1 means no drag.
+        hoverVert : false,
+        hoverHoriz : false,
+
+        getHorizBarCoords : function() {
+            return [ originX + this.margin,  //Left
+                     originY + canvas.height - this.margin - this.width, //Top
+                     canvas.width - this.width - 2 * this.margin, //Width
+                     this.width //Height
+                   ];
+        },
+
+        getVertBarCoords : function() {
+            return [ originX + canvas.width - this.margin - this.width,  //Left
+                     originY + this.margin, //Top
+                     this.width, //Width
+                     canvas.height - this.width - 2 * this.margin //Height
+                   ];
+        },
+
+        getHorizThumbCoords : function() {
+            var startOffset = originX / sizeX,
+                length = canvas.width / sizeX;
+                bar = this.getHorizBarCoords();
+            return [bar[0] + startOffset * bar[2], bar[1], length * bar[2], bar[3]];
+        },
+
+        getVertThumbCoords : function() {
+            var startOffset = originY / sizeY,
+                length = canvas.height / sizeY;
+                bar = this.getVertBarCoords();
+            return [bar[0], bar[1] + startOffset * bar[3], bar[2], length * bar[3]];
+        },
+
+        hitTestHorizThumb : function(pos) {
+            var hCoords = this.getHorizThumbCoords();
+            return (pos.x >= hCoords[0] && pos.y >= hCoords[1] && pos.x <= hCoords[0] + hCoords[2] && pos.y <= hCoords[1] + hCoords[3]);
+        },
+
+        hitTestVertThumb : function(pos) {
+            var vCoords = this.getVertThumbCoords();
+            return (pos.x >= vCoords[0] && pos.y >= vCoords[1] && pos.x <= vCoords[0] + vCoords[2] && pos.y <= vCoords[1] + vCoords[3]);
+        },
+
+        beginDrag : function(pos) {
+            if(this.hitTestHorizThumb(pos)) {
+                this.horizDragPos = pos.x;
+            }
+
+            if(this.hitTestVertThumb(pos)) {
+                this.vertDragPos = pos.y;
+            }
+        },
+
+        updateMove : function(pos) {
+            var prevHoverHoriz = this.hoverHoriz,
+                prevHoverVert = this.hoverVert;
+            if(this.hitTestHorizThumb(pos)) {
+                canvas.style.cursor = "pointer";
+                this.hoverHoriz = true;
+            } else if(this.hitTestVertThumb(pos)) {
+                canvas.style.cursor = "pointer";
+                this.hoverVert = true;
+            } else {
+                //WARNING: This fails if we have no margin and leave the scrollbar.  This should be fixed.
+                canvas.style.cursor = "auto";
+                this.hoverHoriz = false;
+                this.hoverVert = false;
+            }
+
+            this.updateDrag(pos);
+
+            if(prevHoverHoriz !== this.hoverHoriz || prevHoverVert !== this.hoverVert) {
+                that.redraw();  //Must redraw entire canvas or else the scrollbars will get darker each time we hover over.
+            }
+        },
+
+        updateDrag : function(pos) {
+            var thumbDelta = 0, 
+                canvasDelta = 0,
+                barExtraSize = 0,
+                canvasExtraSize = 0;
+            if(this.horizDragPos > -1) {
+                thumbDelta = pos.x - this.horizDragPos;
+                barExtraSize = this.getHorizBarCoords()[2] - this.getHorizThumbCoords()[2];
+                canvasExtraSize = sizeX - canvas.width;
+                canvasDelta = thumbDelta * (barExtraSize / canvasExtraSize);
+                that.moveRight(canvasDelta); 
+                this.horizDragPos = pos.x;
+
+            }
+            if(this.vertDragPos > -1) {
+                thumbDelta = pos.y - this.vertDragPos;
+                barExtraSize = this.getVertBarCoords()[3] - this.getVertThumbCoords()[3];
+                canvasExtraSize = sizeX - canvas.width;
+                canvasDelta = thumbDelta * (barExtraSize / canvasExtraSize);
+                that.moveDown(canvasDelta); 
+                this.vertDragPos = pos.y;
+            }
+        },
+
+        endDrag : function() {
+            this.horizDragPos = -1,
+            this.vertDragPos = -1
+        },
+
+        redraw : function() {
+            var horizWhole = this.getHorizBarCoords(),
+                vertWhole = this.getVertBarCoords(),
+                horizThumb = this.getHorizThumbCoords(),
+                vertThumb = this.getVertThumbCoords(),
+                thumbOffStrokeStyle = "rgba(0, 255, 0, 0.5)",
+                thumbOffFillStyle = "rgba(0, 128, 0, 0.5)",
+                barOffStrokeStyle = "rgba(0, 200, 0, 0.2)",
+                barOffFillStyle = "rgba(0, 100, 0, 0.09)",
+                thumbOnStrokeStyle = "rgba(0, 255, 0, 1)",
+                thumbOnFillStyle = "rgba(0, 128, 0, 1)",
+                barOnStrokeStyle = "rgba(0, 200, 0, 0.4)",
+                barOnFillStyle = "rgba(0, 100, 0, 0.18)";
+
+                context.strokeWidth = 2;
+            if(this.showHorizontal) {
+                context.strokeStyle = (this.hoverHoriz ? barOnStrokeStyle : barOffStrokeStyle);
+                context.fillStyle = (this.hoverHoriz ? barOnFillStyle : barOffFillStyle);
+                context.fillRect.apply(context, horizWhole);
+                context.strokeRect.apply(context, horizWhole);
+            }
+
+            if(this.showVertical) {
+                context.strokeStyle = (this.hoverVert ? barOnStrokeStyle : barOffStrokeStyle);
+                context.fillStyle = (this.hoverVert ? barOnFillStyle : barOffFillStyle);
+                context.fillRect.apply(context, vertWhole);
+                context.strokeRect.apply(context, vertWhole);
+            }
+
+            
+            context.strokeStyle = thumbOffStrokeStyle;
+            context.fillStyle = thumbOffFillStyle;
+            context.strokeWidth = 4;
+
+            if(this.showHorizontal) {
+                context.strokeStyle = (this.hoverHoriz ? thumbOnStrokeStyle : thumbOffStrokeStyle);
+                context.fillStyle = (this.hoverHoriz ? thumbOnFillStyle : thumbOffFillStyle);
+                context.fillRect.apply(context, horizThumb);
+                context.strokeRect.apply(context, horizThumb);
+            }
+            if(this.showVertical) {
+                context.strokeStyle = (this.hoverVert ? thumbOnStrokeStyle : thumbOffStrokeStyle);
+                context.fillStyle = (this.hoverVert ? thumbOnFillStyle : thumbOffFillStyle);
+                context.fillRect.apply(context, vertThumb);
+                context.strokeRect.apply(context, vertThumb);
+            }
+
+            //Reset defaults
+            context.lineWidth = defaultStrokeWidth;
+            context.strokeStyle = defaultStrokeStyle;
+        }
+    }
+
     this.moveLeft = function(delta) {
+        if(delta < 0) {
+            this.moveRight(delta * -1);
+            return;
+        }
         delta = Math.min(delta, originX);
         context.translate(delta / scale, 0);
         originX -= delta;
@@ -544,6 +734,10 @@ CanvasMap = function(id, undefined) {
     }
 
     this.moveUp = function(delta) {
+        if(delta < 0) {
+            this.moveDown(delta * -1);
+            return;
+        }
         delta = Math.min(delta, originY);
         context.translate(0, delta / scale);
         originY -= delta;
@@ -552,6 +746,10 @@ CanvasMap = function(id, undefined) {
 
     this.moveDown = function(delta) {
         var actualMaxY = (sizeY - canvas.height) * scale + (scale - 1) * canvas.height;
+        if(delta < 0) {
+            this.moveUp(delta * -1);
+            return;
+        }
         delta = Math.min(delta, actualMaxY - originY);
         context.translate(0, delta / scale * -1);
         originY += delta;
@@ -560,6 +758,10 @@ CanvasMap = function(id, undefined) {
 
     this.moveRight = function(delta) {
         var actualMaxX = (sizeX - canvas.width) * scale + (scale - 1) * canvas.width;
+        if(delta < 0) {
+            this.moveLeft(delta * -1);
+            return;
+        }
         delta = Math.min(delta, actualMaxX - originX);
         context.translate(delta / scale * -1, 0);
         originX += delta;
@@ -599,4 +801,6 @@ CanvasMap = function(id, undefined) {
     //Attach events to canvas mouse behaviour
     _domAddEvent(canvas, "mousemove", _handleNodeMouseEvents);
     _domAddEvent(canvas, "mouseout", _leaveNodeMouseEvents);
+    _domAddEvent(canvas, "mousedown", _handleMouseDown);
+    _domAddEvent(canvas, "mouseup", _handleMouseUp);
 }

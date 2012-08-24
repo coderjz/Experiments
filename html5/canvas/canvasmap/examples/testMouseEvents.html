@@ -65,7 +65,7 @@
             var cm = new CanvasMap("mainCanvas");
 
             var nodes = [ 
-                {    x : 50,
+                {    x : 170,
                      y : 20,
                      a : 10,
                      b : 30,
@@ -80,7 +80,7 @@
                      text : "rect..",
                      type : "rectangle"
                 },
-                {    x : 200,
+                {    x : 120,
                      y : 200,
                      r : 100,
                      text : "hello",
@@ -115,7 +115,7 @@
             cm.addConnection(nodes[1], nodes[3]);
             cm.addConnection(nodes[3], nodes[4]);
             cm.addConnection(nodes[3], nodes[5]);
-
+            cm.redraw();
 
             cm.addNodeEnter(function(node) { 
                     console.log("ENTERED: (" + node.x + "," + node.y + ")"); 
