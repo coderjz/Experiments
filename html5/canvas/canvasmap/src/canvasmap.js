@@ -620,17 +620,23 @@ CanvasMap = function(id, undefined) {
         updateMove : function(pos) {
             var prevHoverHoriz = this.hoverHoriz,
                 prevHoverVert = this.hoverVert;
-            if(this.hitTestHorizThumb(pos)) {
+
+            //Need to test that we are on the thumbnail AND that we are not already dragging the other scrollbar
+            if(this.hitTestHorizThumb(pos) && this.vertDragPos === -1) {
                 canvas.style.cursor = "pointer";
                 this.hoverHoriz = true;
-            } else if(this.hitTestVertThumb(pos)) {
+            } else if(this.hitTestVertThumb(pos) && this.horizDragPos === -1) {
                 canvas.style.cursor = "pointer";
                 this.hoverVert = true;
             } else {
                 //WARNING: This fails if we have no margin and leave the scrollbar.  This should be fixed.
                 canvas.style.cursor = "auto";
-                this.hoverHoriz = false;
-                this.hoverVert = false;
+                if(this.horizDragPos === -1) {
+                    this.hoverHoriz = false;
+                }
+                if(this.vertDragPos === -1) {
+                    this.hoverVert = false;
+                }
             }
 
             this.updateDrag(pos);
@@ -667,6 +673,11 @@ CanvasMap = function(id, undefined) {
         endDrag : function() {
             this.horizDragPos = -1,
             this.vertDragPos = -1
+            if(this.hoverHoriz || this.hoverVert) {
+                this.hoverHoriz = false;
+                this.hoverVert = false;
+                that.redraw();  //Redraw required since we may need to "clear" our scrollbars from being hovered
+            }
         },
 
         redraw : function() {
@@ -683,38 +694,36 @@ CanvasMap = function(id, undefined) {
                 barOnStrokeStyle = "rgba(0, 200, 0, 0.4)",
                 barOnFillStyle = "rgba(0, 100, 0, 0.18)";
 
-                context.strokeWidth = 2;
             if(this.showHorizontal) {
+                context.strokeWidth = 2;
                 context.strokeStyle = (this.hoverHoriz ? barOnStrokeStyle : barOffStrokeStyle);
                 context.fillStyle = (this.hoverHoriz ? barOnFillStyle : barOffFillStyle);
                 context.fillRect.apply(context, horizWhole);
                 context.strokeRect.apply(context, horizWhole);
-            }
 
-            if(this.showVertical) {
-                context.strokeStyle = (this.hoverVert ? barOnStrokeStyle : barOffStrokeStyle);
-                context.fillStyle = (this.hoverVert ? barOnFillStyle : barOffFillStyle);
-                context.fillRect.apply(context, vertWhole);
-                context.strokeRect.apply(context, vertWhole);
-            }
-
-            
-            context.strokeStyle = thumbOffStrokeStyle;
-            context.fillStyle = thumbOffFillStyle;
-            context.strokeWidth = 4;
-
-            if(this.showHorizontal) {
+                context.strokeWidth = 4;
                 context.strokeStyle = (this.hoverHoriz ? thumbOnStrokeStyle : thumbOffStrokeStyle);
                 context.fillStyle = (this.hoverHoriz ? thumbOnFillStyle : thumbOffFillStyle);
                 context.fillRect.apply(context, horizThumb);
                 context.strokeRect.apply(context, horizThumb);
             }
+
             if(this.showVertical) {
+                context.strokeWidth = 2;
+                context.strokeStyle = (this.hoverVert ? barOnStrokeStyle : barOffStrokeStyle);
+                context.fillStyle = (this.hoverVert ? barOnFillStyle : barOffFillStyle);
+                context.fillRect.apply(context, vertWhole);
+                context.strokeRect.apply(context, vertWhole);
+
+                context.strokeWidth = 4;
                 context.strokeStyle = (this.hoverVert ? thumbOnStrokeStyle : thumbOffStrokeStyle);
                 context.fillStyle = (this.hoverVert ? thumbOnFillStyle : thumbOffFillStyle);
                 context.fillRect.apply(context, vertThumb);
                 context.strokeRect.apply(context, vertThumb);
             }
+
+            
+
 
             //Reset defaults
             context.lineWidth = defaultStrokeWidth;
