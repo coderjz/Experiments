@@ -655,18 +655,31 @@ CanvasMap = function(id, undefined) {
                 thumbDelta = pos.x - this.horizDragPos;
                 barExtraSize = this.getHorizBarCoords()[2] - this.getHorizThumbCoords()[2];
                 canvasExtraSize = sizeX - canvas.width;
-                canvasDelta = thumbDelta * (barExtraSize / canvasExtraSize);
-                that.moveRight(canvasDelta); 
-                this.horizDragPos = pos.x;
+                canvasDelta = (thumbDelta / barExtraSize) * canvasExtraSize;
 
+                //Bugfix: Holding scrollbar and going past the end would cause jitter.
+                //TODO: Fix better....
+                if((canvasDelta > 0 && (originX + canvas.width >= sizeX)) ||
+                    (canvasDelta < 0 && originX <= 0)) {
+                    return;
+                }
+                that.moveRight(canvasDelta)
+                this.horizDragPos = pos.x + canvasDelta;
             }
             if(this.vertDragPos > -1) {
                 thumbDelta = pos.y - this.vertDragPos;
                 barExtraSize = this.getVertBarCoords()[3] - this.getVertThumbCoords()[3];
-                canvasExtraSize = sizeX - canvas.width;
-                canvasDelta = thumbDelta * (barExtraSize / canvasExtraSize);
+                canvasExtraSize = sizeY - canvas.height;
+                canvasDelta = (thumbDelta / barExtraSize) * canvasExtraSize;
+
+                //Bugfix: Holding scrollbar and going past the end would cause jitter.
+                //TODO: Fix better....
+                if((canvasDelta > 0 && (originY + canvas.height >= sizeY)) ||
+                    (canvasDelta < 0 && originY <= 0)) {
+                    return;
+                }
                 that.moveDown(canvasDelta); 
-                this.vertDragPos = pos.y;
+                this.vertDragPos = pos.y + canvasDelta;
             }
         },
 
