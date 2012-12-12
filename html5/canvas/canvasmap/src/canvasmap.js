@@ -410,6 +410,7 @@ CanvasMap = function(id, undefined) {
 
         //First, update scrollbars.
         scrollbars.updateMove(pos);
+		draggingNode.updateMove(pos);
 
         for(i = 0, l = _nodes.length; i < l; i++) {
             nodeType = that.nodeTypes[_nodes[i].type];
@@ -457,11 +458,17 @@ CanvasMap = function(id, undefined) {
 
         //Prevent scrollbars from dragging if leave canvas and come back in.
         scrollbars.endDrag();
+		draggingNode.endDrag();
     }
 
     //Mouse down
     _handleMouseDown = function(e) {
-        scrollbars.beginDrag(_translateMouseCoords(_getMouseCoords.call(canvas, e)));
+		var pos = _translateMouseCoords(_getMouseCoords.call(canvas, e)),
+			dragPerformed =scrollbars.beginDrag(pos);
+
+		if(!dragPerformed) { 
+			draggingNode.beginDrag(pos);
+		}
 
         //Prevent change of cursor to selection.  Code from: http://stackoverflow.com/questions/2659999/html5-canvas-hand-cursor-problems
         e.preventDefault();
@@ -470,6 +477,7 @@ CanvasMap = function(id, undefined) {
 
     _handleMouseUp = function(e) {
         scrollbars.endDrag();
+		draggingNode.endDrag();
     }
 
     var _invokeNodeMouseEvent = function(node, eventType) {
@@ -608,13 +616,17 @@ CanvasMap = function(id, undefined) {
         },
 
         beginDrag : function(pos) {
+			var isDrag = false;
             if(this.hitTestHorizThumb(pos)) {
                 this.horizDragPos = pos.x;
+				isDrag = true;
             }
 
             if(this.hitTestVertThumb(pos)) {
                 this.vertDragPos = pos.y;
+				isDrag = true;
             }
+			return isDrag;
         },
 
         updateMove : function(pos) {
@@ -743,6 +755,79 @@ CanvasMap = function(id, undefined) {
             context.strokeStyle = defaultStrokeStyle;
         }
     }
+
+	//The current node being dragged.
+	//Consider merging this and scrollbars into draggable object prototype to share common code
+	var draggingNode = {
+        prevXPos : -1, //In pixels, last position of dragging horizontal scrollbar.  -1 means no drag.
+        prevYPos : -1, //In pixels, last position of dragging horizontal scrollbar.  -1 means no drag.
+		node : null,  //The node we are dragging.
+		prevStrokeStyle : null,  //Copy of 
+		prevFillStyle : null,
+		prevStrokeWidth : null,
+
+        beginDrag : function(pos) {
+			var isDrag = false;
+			this.node = _mouseOverNodes && _mouseOverNodes[0];
+            		if(this.node) {
+				this.prevXPos = pos.x;
+				this.prevYPos = pos.y;
+
+                		canvas.style.cursor = "move";
+
+				isDrag = true;
+
+				this.prevStrokeStyle = this.node.strokeStyle;
+				this.prevStrokeWidth = this.node.strokeWidth;
+				this.prevFillStyle = this.node.fillStyle;
+
+				this.node.strokeStyle = "rgba(0, 200, 0, 0.7)";
+				this.node.fillStyle = "rgba(0, 100, 0, 0.15)";
+				this.node.strokeWidth = 3;
+
+				that.redraw();
+            }
+
+			return isDrag;
+        },
+
+		updateMove : function(pos) {
+            var moveX = pos.x - this.prevXPos,
+                moveY = pos.y - this.prevYPos,
+				changed = false;
+
+			if(!this.node || this.prevXPos === -1 || this.prevYPos === -1) { return; }
+
+			if(Math.abs(moveX) > 2) {
+				this.node.x += moveX;
+				this.prevXPos += moveX;
+				changed = true;
+			}
+			if(Math.abs(moveY) > 2) {
+				this.node.y += moveY;
+				this.prevYPos += moveY;
+				changed = true;
+			}
+
+			if(changed) {
+				that.redraw();  
+			}
+        },
+
+		endDrag : function () { 
+			canvas.style.cursor = "auto";
+            this.prevXPos = -1,
+            this.prevYPos = -1
+            if(this.node) {
+				this.node.strokeStyle = this.prevStrokeStyle;
+				this.node.fillStyle = this.prevFillStyle;
+				this.node.strokeWidth = this.prevStrokeWidth;
+
+                this.node = null;
+                that.redraw();  
+            }
+		}
+	}
 
     this.moveLeft = function(delta) {
         if(delta < 0) {
