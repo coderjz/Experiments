@@ -351,8 +351,8 @@ CanvasMap = function(id, undefined) {
 
     //Redraw everything
     this.redraw = function() {
-        console.log("Redraw.  Translate: (", originX, ",", originY, ").  Zoom: ", scale);
-        console.log("Clearing: ", originX / scale, ",", originY / scale, ",", canvas.width / scale, ",", canvas.height / scale);
+        //console.log("Redraw.  Translate: (", originX, ",", originY, ").  Zoom: ", scale);
+        //console.log("Clearing: ", originX / scale, ",", originY / scale, ",", canvas.width / scale, ",", canvas.height / scale);
 
         context.clearRect(originX / scale, originY / scale, canvas.width / scale, canvas.height / scale);
         _renderConnection(_connections);
@@ -408,9 +408,16 @@ CanvasMap = function(id, undefined) {
             nodeType, 
             bbox;
 
-        //First, update scrollbars.
-        scrollbars.updateMove(pos);
-		draggingNode.updateMove(pos);
+
+        //First, update dragging.
+		//If not dragging any element, then refresh the scrollbars
+		if(draggingNode.isDrag) {
+			draggingNode.updateDrag(pos);
+		} else if(draggingCanvas.isDrag) {
+			draggingCanvas.updateDrag(pos);
+		} else {
+			scrollbars.updateMove(pos);
+		}
 
         for(i = 0, l = _nodes.length; i < l; i++) {
             nodeType = that.nodeTypes[_nodes[i].type];
@@ -459,15 +466,20 @@ CanvasMap = function(id, undefined) {
         //Prevent scrollbars from dragging if leave canvas and come back in.
         scrollbars.endDrag();
 		draggingNode.endDrag();
+		draggingCanvas.endDrag();
     }
 
     //Mouse down
     _handleMouseDown = function(e) {
 		var pos = _translateMouseCoords(_getMouseCoords.call(canvas, e)),
-			dragPerformed =scrollbars.beginDrag(pos);
+			dragPerformed = scrollbars.beginDrag(pos);
 
 		if(!dragPerformed) { 
-			draggingNode.beginDrag(pos);
+			dragPerformed =	draggingNode.beginDrag(pos);
+		}
+
+		if(!dragPerformed) {
+			dragPerformed =	draggingCanvas.beginDrag(pos);
 		}
 
         //Prevent change of cursor to selection.  Code from: http://stackoverflow.com/questions/2659999/html5-canvas-hand-cursor-problems
@@ -478,6 +490,7 @@ CanvasMap = function(id, undefined) {
     _handleMouseUp = function(e) {
         scrollbars.endDrag();
 		draggingNode.endDrag();
+		draggingCanvas.endDrag();
     }
 
     var _invokeNodeMouseEvent = function(node, eventType) {
@@ -574,6 +587,7 @@ CanvasMap = function(id, undefined) {
         vertDragPos : -1, //In pixels, last position of dragging horizontal scrollbar.  -1 means no drag.
         hoverVert : false,
         hoverHoriz : false,
+		isDrag : false,
 
         getHorizBarCoords : function() {
             return [ originX + this.margin,  //Left
@@ -616,17 +630,19 @@ CanvasMap = function(id, undefined) {
         },
 
         beginDrag : function(pos) {
-			var isDrag = false;
+			this.isDrag = false;
             if(this.hitTestHorizThumb(pos)) {
                 this.horizDragPos = pos.x;
-				isDrag = true;
+                canvas.style.cursor = "move";
+				this.isDrag = true;
             }
 
             if(this.hitTestVertThumb(pos)) {
                 this.vertDragPos = pos.y;
-				isDrag = true;
+                canvas.style.cursor = "move";
+				this.isDrag = true;
             }
-			return isDrag;
+			return this.isDrag;
         },
 
         updateMove : function(pos) {
@@ -635,14 +651,11 @@ CanvasMap = function(id, undefined) {
 
             //Need to test that we are on the thumbnail AND that we are not already dragging the other scrollbar
             if(this.hitTestHorizThumb(pos) && this.vertDragPos === -1) {
-                canvas.style.cursor = "pointer";
                 this.hoverHoriz = true;
             } else if(this.hitTestVertThumb(pos) && this.horizDragPos === -1) {
-                canvas.style.cursor = "pointer";
                 this.hoverVert = true;
             } else {
                 //WARNING: This fails if we have no margin and leave the scrollbar.  This should be fixed.
-                canvas.style.cursor = "auto";
                 if(this.horizDragPos === -1) {
                     this.hoverHoriz = false;
                 }
@@ -696,8 +709,10 @@ CanvasMap = function(id, undefined) {
         },
 
         endDrag : function() {
+			this.isDrag = false;
             this.horizDragPos = -1,
             this.vertDragPos = -1
+            canvas.style.cursor = "auto";
             if(this.hoverHoriz || this.hoverVert) {
                 this.hoverHoriz = false;
                 this.hoverVert = false;
@@ -748,8 +763,6 @@ CanvasMap = function(id, undefined) {
             }
 
             
-
-
             //Reset defaults
             context.lineWidth = defaultStrokeWidth;
             context.strokeStyle = defaultStrokeStyle;
@@ -765,17 +778,17 @@ CanvasMap = function(id, undefined) {
 		prevStrokeStyle : null,  //Copy of 
 		prevFillStyle : null,
 		prevStrokeWidth : null,
+		isDrag : false,
 
         beginDrag : function(pos) {
-			var isDrag = false;
 			this.node = _mouseOverNodes && _mouseOverNodes[0];
-            		if(this.node) {
+			if(this.node) {
 				this.prevXPos = pos.x;
 				this.prevYPos = pos.y;
 
-                		canvas.style.cursor = "move";
+				canvas.style.cursor = "move";
 
-				isDrag = true;
+				this.isDrag = true;
 
 				this.prevStrokeStyle = this.node.strokeStyle;
 				this.prevStrokeWidth = this.node.strokeWidth;
@@ -788,15 +801,15 @@ CanvasMap = function(id, undefined) {
 				that.redraw();
             }
 
-			return isDrag;
+			return this.isDrag;
         },
 
-		updateMove : function(pos) {
+		updateDrag : function(pos) {
             var moveX = pos.x - this.prevXPos,
                 moveY = pos.y - this.prevYPos,
 				changed = false;
 
-			if(!this.node || this.prevXPos === -1 || this.prevYPos === -1) { return; }
+			if(!this.isDrag) { return; }
 
 			if(Math.abs(moveX) > 2) {
 				this.node.x += moveX;
@@ -818,6 +831,7 @@ CanvasMap = function(id, undefined) {
 			canvas.style.cursor = "auto";
             this.prevXPos = -1,
             this.prevYPos = -1
+			this.isDrag = false;
             if(this.node) {
 				this.node.strokeStyle = this.prevStrokeStyle;
 				this.node.fillStyle = this.prevFillStyle;
@@ -826,6 +840,52 @@ CanvasMap = function(id, undefined) {
                 this.node = null;
                 that.redraw();  
             }
+		}
+	}
+
+
+	//Object to handle logic around dragging the Canvas 
+	var draggingCanvas = {
+        prevXPos : -1, //In pixels, last position of dragging horizontal scrollbar.  -1 means no drag.
+        prevYPos : -1, //In pixels, last position of dragging horizontal scrollbar.  -1 means no drag.
+		isDrag : false,
+
+        beginDrag : function(pos) {
+			this.isDrag = true;
+			this.prevXPos = pos.x;
+			this.prevYPos = pos.y;
+			canvas.style.cursor = "move";
+			return this.isDrag;
+        },
+
+		updateDrag : function(pos) {
+            var moveX = pos.x - this.prevXPos,
+                moveY = pos.y - this.prevYPos,
+				changed = false;
+
+			if(!this.isDrag) { return; }
+
+			if(Math.abs(moveX) > 2) {
+				this.prevXPos = pos.x + moveX;  //New Starting Mouse Position is current mouse position AND amount we translated canvas by
+				that.moveRight(moveX);
+				changed = true;
+			}
+			if(Math.abs(moveY) > 2) {
+				this.prevYPos = pos.y + moveY;
+				that.moveDown(moveY);
+				changed = true;
+			}
+
+			if(changed) {
+				that.redraw();  
+			}
+        },
+
+		endDrag : function () { 
+			this.isDrag = false;
+			canvas.style.cursor = "auto";
+            this.prevXPos = -1,
+            this.prevYPos = -1
 		}
 	}
 
