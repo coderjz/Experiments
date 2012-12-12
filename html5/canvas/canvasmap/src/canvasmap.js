@@ -349,17 +349,56 @@ CanvasMap = function(id, undefined) {
         }
     }
 
-    //Redraw everything
-    this.redraw = function() {
-        //console.log("Redraw.  Translate: (", originX, ",", originY, ").  Zoom: ", scale);
-        //console.log("Clearing: ", originX / scale, ",", originY / scale, ",", canvas.width / scale, ",", canvas.height / scale);
+	//Object to manage redrawing the canvas with an animation loop
+	//Source for requesting next frame: http://www.html5canvastutorials.com/advanced/html5-canvas-animation-stage/
+	//Does this support multiple different canvas???
+	var _redraw = (function() {
+		var that = this,
+		newFrame = true,
+		started = false,
 
-        context.clearRect(originX / scale, originY / scale, canvas.width / scale, canvas.height / scale);
-        _renderConnection(_connections);
-        _render(_nodes);
+		//Perfroms the actual refresh 
+		Run = function() {
+			if(newFrame) { //If we want a new frame... 
+        		console.log("Redraw.  Translate: (", originX, ",", originY, ").  Zoom: ", scale);
+        		console.log("Clearing: ", originX / scale, ",", originY / scale, ",", canvas.width / scale, ",", canvas.height / scale);
 
-        scrollbars.redraw();
-    }
+        		context.clearRect(originX / scale, originY / scale, canvas.width / scale, canvas.height / scale);
+        		_renderConnection(_connections);
+        		_render(_nodes);
+
+        		scrollbars.redraw();
+			}
+
+			newFrame = false;
+
+			// request new frame
+			RequestNextFrame(Run);
+		},
+
+		//TODO: Figure out if this totally breaks with two different canvas!
+		RequestNextFrame = function(callback) {
+			var browserNextFrame = (window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+				function(callback) {
+          			window.setTimeout(callback, 1000 / 60);
+				});
+			browserNextFrame(callback);
+		};
+
+		//Begin requesting frames
+		RequestNextFrame(Run);
+
+		return {
+			//Performs a refresh by setting the flag on the next animation loop
+			Do : function() {
+				newFrame = true;
+			}
+		}
+	})();
+
+	this.redraw = function() {
+		_redraw.Do();
+	}
 
     var _updateCanvasSize = function(node) {
         nodeType = that.nodeTypes[node.type];
@@ -379,7 +418,7 @@ CanvasMap = function(id, undefined) {
         c.height = height;
         context = c.getContext("2d");
 
-        that.redraw();
+        _redraw.Do();
         context = origContext;
 
         window.open(c.toDataURL(), "Canvas Image Data", "left=100,top=100");
@@ -667,7 +706,7 @@ CanvasMap = function(id, undefined) {
             this.updateDrag(pos);
 
             if(prevHoverHoriz !== this.hoverHoriz || prevHoverVert !== this.hoverVert) {
-                that.redraw();  //Must redraw entire canvas or else the scrollbars will get darker each time we hover over.
+                _redraw.Do();  //Must redraw entire canvas or else the scrollbars will get darker each time we hover over.
             }
         },
 
@@ -716,7 +755,7 @@ CanvasMap = function(id, undefined) {
             if(this.hoverHoriz || this.hoverVert) {
                 this.hoverHoriz = false;
                 this.hoverVert = false;
-                that.redraw();  //Redraw required since we may need to "clear" our scrollbars from being hovered
+                _redraw.Do();  //Redraw required since we may need to "clear" our scrollbars from being hovered
             }
         },
 
@@ -798,7 +837,7 @@ CanvasMap = function(id, undefined) {
 				this.node.fillStyle = "rgba(0, 100, 0, 0.15)";
 				this.node.strokeWidth = 3;
 
-				that.redraw();
+				_redraw.Do();
             }
 
 			return this.isDrag;
@@ -823,7 +862,7 @@ CanvasMap = function(id, undefined) {
 			}
 
 			if(changed) {
-				that.redraw();  
+				_redraw.Do();  
 			}
         },
 
@@ -838,7 +877,7 @@ CanvasMap = function(id, undefined) {
 				this.node.strokeWidth = this.prevStrokeWidth;
 
                 this.node = null;
-                that.redraw();  
+                _redraw.Do();  
             }
 		}
 	}
@@ -877,7 +916,7 @@ CanvasMap = function(id, undefined) {
 			}
 
 			if(changed) {
-				that.redraw();  
+				_redraw.Do();  
 			}
         },
 
@@ -897,7 +936,7 @@ CanvasMap = function(id, undefined) {
         delta = Math.min(delta, originX);
         context.translate(delta / scale, 0);
         originX -= delta;
-        that.redraw();
+        _redraw.Do();
     }
 
     this.moveUp = function(delta) {
@@ -908,7 +947,7 @@ CanvasMap = function(id, undefined) {
         delta = Math.min(delta, originY);
         context.translate(0, delta / scale);
         originY -= delta;
-        that.redraw();
+        _redraw.Do();
     }
 
     this.moveDown = function(delta) {
@@ -920,7 +959,7 @@ CanvasMap = function(id, undefined) {
         delta = Math.min(delta, actualMaxY - originY);
         context.translate(0, delta / scale * -1);
         originY += delta;
-        that.redraw();
+        _redraw.Do();
     }
 
     this.moveRight = function(delta) {
@@ -932,7 +971,7 @@ CanvasMap = function(id, undefined) {
         delta = Math.min(delta, actualMaxX - originX);
         context.translate(delta / scale * -1, 0);
         originX += delta;
-        that.redraw();
+        _redraw.Do();
     }
 
     this.zoomOut = function() {
@@ -951,7 +990,7 @@ CanvasMap = function(id, undefined) {
         context.scale(scaleFactor, scaleFactor);
         //Now translate back to place
         context.translate(originX / scale, originY / scale);
-        that.redraw();
+        _redraw.Do();
     }
 
     this.reset = function(scaleFactor) {
@@ -961,7 +1000,7 @@ CanvasMap = function(id, undefined) {
 
         //Use identity matrix to reset transform
         context.setTransform(1, 0, 0, 1, 0, 0);
-        that.redraw();
+        _redraw.Do();
     }
 
 
