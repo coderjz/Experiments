@@ -771,9 +771,12 @@ CanvasMap = function(id, undefined) {
                 thumbOnStrokeStyle = "rgba(0, 255, 0, 1)",
                 thumbOnFillStyle = "rgba(0, 128, 0, 1)",
                 barOnStrokeStyle = "rgba(0, 200, 0, 0.4)",
-                barOnFillStyle = "rgba(0, 100, 0, 0.18)";
+                barOnFillStyle = "rgba(0, 100, 0, 0.18)",
+                xRequiresScroll = (sizeX > canvas.width),
+                yRequiresScroll = (sizeY > canvas.height);
 
-            if(this.showHorizontal) {
+
+            if(this.showHorizontal && xRequiresScroll) {
                 context.strokeWidth = 2;
                 context.strokeStyle = (this.hoverHoriz ? barOnStrokeStyle : barOffStrokeStyle);
                 context.fillStyle = (this.hoverHoriz ? barOnFillStyle : barOffFillStyle);
@@ -787,7 +790,7 @@ CanvasMap = function(id, undefined) {
                 context.strokeRect.apply(context, horizThumb);
             }
 
-            if(this.showVertical) {
+            if(this.showVertical && yRequiresScroll) {
                 context.strokeWidth = 2;
                 context.strokeStyle = (this.hoverVert ? barOnStrokeStyle : barOffStrokeStyle);
                 context.fillStyle = (this.hoverVert ? barOnFillStyle : barOffFillStyle);
