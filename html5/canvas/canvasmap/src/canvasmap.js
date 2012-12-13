@@ -89,31 +89,7 @@ CanvasMap = function(id, undefined) {
     this.nodeTypes.circle = {
         //Draws the circle
         draw : function() {
-            context.beginPath();
-            if(this.strokeStyle) {
-                context.strokeStyle = this.strokeStyle;
-            }
-            if(this.strokeWidth) {
-                context.lineWidth = this.strokeWidth;
-            }
             context.arc(this.x, this.y, this.r, 0, 2 * Math.PI, true);
-            context.stroke();
-            if(this.text) {
-                context.textAlign = "center";
-                context.textBaseline = 'middle';
-                context.fillStyle = defaultTextColor;
-                context.font = defaultTextFont;
-                context.fillText(this.text, this.x, this.y);
-            }
-            if(this.fillStyle) {
-                context.fillStyle = this.fillStyle;
-                context.fill();
-            }
-            context.closePath();
-
-            //Reset defaults
-            context.lineWidth = defaultStrokeWidth;
-            context.strokeStyle = defaultStrokeStyle;
         },
         //Gets the endpoint for a connection
         connect : function(xTo, yTo) {
@@ -144,30 +120,7 @@ CanvasMap = function(id, undefined) {
     this.nodeTypes.rectangle = {
         //Draws the rectangle
         draw : function() {
-            context.beginPath();
-            if(this.strokeStyle) {
-                context.strokeStyle = this.strokeStyle;
-            }
-            if(this.strokeWidth) {
-                context.lineWidth = this.strokeWidth;
-            }
             context.rect(this.x - (this.w / 2), this.y - (this.h / 2), this.w, this.h);
-            context.stroke();
-            if(this.text) {
-                context.textAlign = "center";
-                context.textBaseline = 'middle';
-                context.fillStyle = defaultTextColor;
-                context.fillText(this.text, this.x, this.y);
-            }
-            if(this.fillStyle) {
-                context.fillStyle = this.fillStyle;
-                context.fill();
-            }
-            context.closePath();
-
-            //Reset defaults
-            context.lineWidth = defaultStrokeWidth;
-            context.strokeStyle = defaultStrokeStyle;
         },
 
         //Gets the endpoint for a connection
@@ -227,13 +180,6 @@ CanvasMap = function(id, undefined) {
         draw : function() {
             var v = that.nodeTypes[this.type].vertices.apply(this),
                 i, l;
-            context.beginPath();
-            if(this.strokeStyle) {
-                context.strokeStyle = this.strokeStyle;
-            }
-            if(this.strokeWidth) {
-                context.lineWidth = this.strokeWidth;
-            }
 
             context.moveTo(v[0].x, v[0].y);
             for(var i = 1, l = v.length; i < l; i++) {
@@ -242,22 +188,6 @@ CanvasMap = function(id, undefined) {
             context.lineTo(v[0].x, v[0].y);  //Close the polygon
             context.lineTo(v[1].x, v[1].y);  //Drawing this line twice helps it look better when border is thick.
 
-            context.stroke();
-            if(this.text) {
-                context.textAlign = "center";
-                context.textBaseline = 'middle';
-                context.fillStyle = defaultTextColor;
-                context.fillText(this.text, this.x, this.y);
-            }
-            if(this.fillStyle) {
-                context.fillStyle = this.fillStyle;
-                context.fill();
-            }
-            context.closePath();
-
-            //Reset defaults
-            context.lineWidth = defaultStrokeWidth;
-            context.strokeStyle = defaultStrokeStyle;
         },
         //Gets the endpoint for a connection
         connect : function(xTo, yTo) {
@@ -311,12 +241,74 @@ CanvasMap = function(id, undefined) {
         _updateCanvasSize(node);
     } 
 
+    //This is the main algorithm to draw ANY node.
+    //The path/border of the node will be drawn by calling the draw method of the nodeType, using the node as the "this" parameter.
+    var _renderNode = function(nodeType, node) {
+        var isDrag = false, 
+            isMouseOver = false,
+            doFill = false;
+
+        if(draggingNode.node === node) {
+            isDrag = true;
+        } else if(_arrayIndexOf.call(_mouseOverNodes, node) !== -1) {
+            isMouseOver = true;
+        }
+
+        context.beginPath();
+
+        if(isDrag && node.dragStrokeStyle) {
+            context.strokeStyle = node.dragStrokeStyle;
+        } else if(isMouseOver && node.hoverStrokeStyle) {
+            context.strokeStyle = node.hoverStrokeStyle;
+        } else if(node.strokeStyle) {
+            context.strokeStyle = node.strokeStyle;
+        }
+
+        if(isDrag && node.dragStrokeWidth) {
+            context.lineWidth = node.dragStrokeWidth;
+        } else if(isMouseOver && node.hoverStrokeWidth) {
+            context.lineWidth = node.hoverStrokeWidth;
+        } else if(node.strokeWidth) {
+            context.lineWidth = node.strokeWidth;
+        }
+
+        nodeType.draw.apply(node);
+        context.stroke();
+        if(node.text) {
+            context.textAlign = "center";
+            context.textBaseline = 'middle';
+            context.fillStyle = defaultTextColor;
+            context.font = defaultTextFont;
+            context.fillText(node.text, node.x, node.y);
+        }
+
+        if(isDrag && node.dragFillStyle) {
+            context.fillStyle = node.dragFillStyle;
+            doFill = true;
+        } else if(isMouseOver && node.hoverFillStyle) {
+            context.fillStyle = node.hoverFillStyle;
+            doFill = true;
+        } else if(node.fillStyle) {
+            context.fillStyle = node.fillStyle;
+            doFill = true;
+        }
+        if(doFill) {
+            context.fill();
+        }
+        context.closePath();
+
+        //Reset defaults
+        context.lineWidth = defaultStrokeWidth;
+        context.strokeStyle = defaultStrokeStyle;
+    }
+
     //Method to Render one or more nodes
     var _render = function(nodes) {
-        var i, l;
+        var i, l, type;
         for(i = 0, l = nodes.length; i < l; i++) {
-            if(that.nodeTypes[nodes[i].type]) {
-                that.nodeTypes[nodes[i].type].draw.apply(nodes[i]);
+            type = that.nodeTypes[nodes[i].type]
+            if(type) {
+                _renderNode(type, nodes[i]);
             }
         }
     }
@@ -445,7 +437,9 @@ CanvasMap = function(id, undefined) {
             i = 0,
             l = 0,
             nodeType, 
-            bbox;
+            bbox,
+            isEnter,
+            isLeave;
 
 
         //First, update dragging.
@@ -475,6 +469,7 @@ CanvasMap = function(id, undefined) {
                   if(nodePos === -1) {
                       _mouseOverNodes.push(_nodes[i]);
                       eventType = "enter";
+                      isEnter = true;
                   } else {
                       eventType = "move";
                   }
@@ -488,7 +483,12 @@ CanvasMap = function(id, undefined) {
             if(_arrayIndexOf.call(localMouseOver, _mouseOverNodes[i]) === -1) {
                 _invokeNodeMouseEvent(_mouseOverNodes[i], "leave");
                 _mouseOverNodes.splice(i, 1);
+                isLeave = true;
             }
+        }
+
+        if(isEnter || isLeave) {
+            _redraw.Do();
         }
     }
 
@@ -814,9 +814,6 @@ CanvasMap = function(id, undefined) {
         prevXPos : -1, //In pixels, last position of dragging horizontal scrollbar.  -1 means no drag.
         prevYPos : -1, //In pixels, last position of dragging horizontal scrollbar.  -1 means no drag.
 		node : null,  //The node we are dragging.
-		prevStrokeStyle : null,  //Copy of 
-		prevFillStyle : null,
-		prevStrokeWidth : null,
 		isDrag : false,
 
         beginDrag : function(pos) {
@@ -828,14 +825,6 @@ CanvasMap = function(id, undefined) {
 				canvas.style.cursor = "move";
 
 				this.isDrag = true;
-
-				this.prevStrokeStyle = this.node.strokeStyle;
-				this.prevStrokeWidth = this.node.strokeWidth;
-				this.prevFillStyle = this.node.fillStyle;
-
-				this.node.strokeStyle = "rgba(0, 200, 0, 0.7)";
-				this.node.fillStyle = "rgba(0, 100, 0, 0.15)";
-				this.node.strokeWidth = 3;
 
 				_redraw.Do();
             }
@@ -867,15 +856,10 @@ CanvasMap = function(id, undefined) {
         },
 
 		endDrag : function () { 
-			canvas.style.cursor = "auto";
             this.prevXPos = -1,
             this.prevYPos = -1
 			this.isDrag = false;
             if(this.node) {
-				this.node.strokeStyle = this.prevStrokeStyle;
-				this.node.fillStyle = this.prevFillStyle;
-				this.node.strokeWidth = this.prevStrokeWidth;
-
                 this.node = null;
                 _redraw.Do();  
             }

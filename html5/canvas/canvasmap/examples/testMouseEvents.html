@@ -108,6 +108,14 @@
                 }
             ];
             for(var i = 0, l = nodes.length; i < l; i++) {
+                nodes[i].hoverStrokeStyle = "green";
+                nodes[i].hoverFillStyle = "rgba(0, 100, 0, 0.3)";
+                nodes[i].hoverStrokeWidth = 5;
+
+                nodes[i].dragStrokeStyle = "rgba(0, 200, 0, 0.7)";
+                nodes[i].dragFillStyle = "rgba(0, 100, 0, 0.15)";
+                nodes[i].dragStrokeWidth = 3;
+
                 cm.addNode(nodes[i]);
             }
             cm.addConnection(nodes[0], nodes[1]);
@@ -119,10 +127,6 @@
 
             cm.addNodeEnter(function(node) { 
                     console.log("ENTERED: (" + node.x + "," + node.y + ")"); 
-                    node.strokeStyle = "green";
-                    node.fillStyle = "rgba(0, 100, 0, 0.3)";
-                    node.strokeWidth = 5;
-                    cm.redraw();
                     });
 
             cm.addNodeMove(function(node) { 
