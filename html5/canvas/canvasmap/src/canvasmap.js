@@ -1021,15 +1021,18 @@ CanvasMap = function(id, undefined) {
     canvasMouseEvents();
 
 
-    //Create a tree layout
+    //Create a tree layout.. we actually have a graph layout as a node can have two parents, but the output will look like a tree with a single root node.
+    //Warning 1: Assumes the graph is already acyclic.
+    //Warning 2: Assumes a single root node.
     //Inspired by dot algorithm, but much, much, simpler.
     //http://www.graphviz.org/Documentation/TSE93.pdf
     this.transitionSimpleTree = function(debug) {
         var _tmpNodes;  //Local copy of nodes.  
         var _tmpConns;  //Local copy of connections
-        var _nodesep = 50; //Horizontal separation
-        var _ranksep = 100; //Vertical separation
+        var _ordersep = 50; //Horizontal separation
+        var _ranksep = 50; //Vertical separation
         var _topMargin = 20;  //Top margin to display nodes from.
+        var _leftMargin = 20;  //Left margin to display nodes from.
 
         //Create the local copy of data to be worked on.
         var createCopies = function() {
@@ -1037,7 +1040,13 @@ CanvasMap = function(id, undefined) {
             _tmpNodes = [];
             _tmpConns = [];
             for(i = 0, l = nodes.length; i < l; i++) {
-                _tmpNodes.push( { "level" : -1, "ranked" : false, "x" : 0, "y" : 0, "origNode" : _nodes[i] });
+                _tmpNodes.push( { "rank" : -1,  //Rank is the ROW of this node
+                                  "ranked" : false,  //Has node been ranked?
+                                  "order" : 0,  //Order is the COLUMN of this node
+                                  "x" : 0,      //X position to be placed
+                                  "y" : 0,      //Y position to be placed
+                                  "origNode" : _nodes[i]   //Reference to original node on graph
+                                });
             }
 
             for(i = 0, l = _connections.length; i < l; i++) {
@@ -1056,19 +1065,15 @@ CanvasMap = function(id, undefined) {
                 _tmpConns.push( { "from" : n1, "to" : n2, "origConn" : _connections[i] } );
             }
         }
+
         //The algorithm is done, apply the new x, y, positions.
         var updateNodes = function() {
             var i, l, n;
 
             for(i = 0, l = _tmpNodes.length; i < l; i++) {
                 n = _tmpNodes[i];
-                n.y = _topMargin + _ranksep * n.level;
-            }
-
-            for(i = 0, l = _tmpNodes.length; i < l; i++) {
-                n = _tmpNodes[i];
                 if(n.origNode) {
-                    //n.origNode.x = n.x;  //NOT YET READY.
+                    n.origNode.x = n.x;
                     n.origNode.y = n.y;
                 }
             }
@@ -1079,7 +1084,7 @@ CanvasMap = function(id, undefined) {
         //Assumes that graph is already acyclic.
         var rank = function() {
             var numRemaining = _tmpNodes.length,
-                currLevel = 0,
+                currRank = 0,
                 anyIncomingEdge = false,
                 nodesToRank = [],
                 i, j, l1, l2;
@@ -1100,7 +1105,7 @@ CanvasMap = function(id, undefined) {
                         }
                     }
                     if(!anyIncomingEdge) {
-                        _tmpNodes[i].level = currLevel;
+                        _tmpNodes[i].rank = currRank;
                         nodesToRank.push(_tmpNodes[i]);
                         numRemaining--;
                     }
@@ -1111,13 +1116,93 @@ CanvasMap = function(id, undefined) {
                     nodesToRank[i].ranked = true;
                 }
                 nodesToRank = [];
-                currLevel++;
+                currRank++;
             }
         }
+
+        //Normalize the ordering so that the lowest ordering is 0, next lowest is 1, ...
+        var normalizeOrdering = function() {
+            var i, l, lowestOrder = 4294967295;
+
+            for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                if(lowestOrder > _tmpNodes[i].order) {
+                    lowestOrder = _tmpNodes[i].order;
+                }
+            }
+
+            for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                _tmpNodes[i].order -= lowestOrder;
+            }
+        }
+
+        //Order the nodes at each rank.
         var ordering = function() {
+            var currRank, currParent, maxRank, processNodes, currOrder, childNodes,
+                distance, start,
+                i, j, l;
+
+            maxRank = -1;
+            processNodes = [];
+
+            //Get the maximum rank, and list of nodes on first rank
+            for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                if(_tmpNodes[i].rank > maxRank) {
+                    maxRank = _tmpNodes[i].rank;
+                }
+                if(_tmpNodes[i].rank === 0) {
+                    processNodes.push(_tmpNodes[i]);
+                }
+            }
+
+            //Perform initial pass on the nodes.  Sets initial ordering for each node.
+            currOrder = 0;
+            currRank = 0;
+            while(processNodes.length > 0) {
+                currParent = processNodes[0];
+                if(currParent.rank !== currRank) {
+                    currRank = currParent.rank;
+                    currOrder = 0;
+                }
+
+                childNodes = [];
+
+                for(i = 0, l = _tmpConns.length; i < l; i++) {
+                    //Node is direct child, not already being processed
+                    if(_tmpConns[i].from === currParent && _tmpConns[i].to.rank === currRank + 1 && 
+                       processNodes.indexOf(_tmpConns[i].to) === -1) {
+                         childNodes.push(_tmpConns[i].to);
+                    }
+                }
+
+
+                //Compute initial ordering where:
+                //If only one node, then child node has parents node rank
+                //If multiple nodes, then places nodes evenly offseted from parent in range [-n + 1, n - 1] where n is the number of children
+                distance = 2 * childNodes.length - 1;
+                start = -1 * childNodes.length + 1;
+                
+                for(i = 0, l = childNodes.length; i < l; i++) {
+                    childNodes[i].order = currParent.order + start + Math.floor(i * (distance / childNodes.length));
+                    processNodes.push(childNodes[i]);
+                }
+
+                processNodes.shift();
+            }
+            
+
+            normalizeOrdering();
         }
+
+        //Set the x, y position of each node.
         var position = function() {
+            for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                n = _tmpNodes[i];
+                n.x = _leftMargin + _ordersep * n.order;
+                n.y = _topMargin + _ranksep * n.rank;
+            }
         }
+
+        //Splines are used in dot algorithm.. my canvas only supports straight lines..
         var makeSplines = function() {
         }
 
@@ -1138,6 +1223,12 @@ CanvasMap = function(id, undefined) {
 
 
         ordering();
+
+        if(debug) {
+            console.log("After ordering nodes");
+            console.dir(_tmpNodes);
+        }
+
         position();
         makeSplines();
         updateNodes();
