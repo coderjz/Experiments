@@ -1027,16 +1027,17 @@ CanvasMap = function(id, undefined) {
     this.transitionSimpleTree = function(debug) {
         var _tmpNodes;  //Local copy of nodes.  
         var _tmpConns;  //Local copy of connections
-        var _nodesep; //Horizontal separation
-        var _ranksep; //Vertical separation
+        var _nodesep = 50; //Horizontal separation
+        var _ranksep = 100; //Vertical separation
+        var _topMargin = 20;  //Top margin to display nodes from.
 
         //Create the local copy of data to be worked on.
         var createCopies = function() {
-            var n1, n2;
+            var n1, n2, i, l;
             _tmpNodes = [];
             _tmpConns = [];
-            for(var n in _nodes) {
-                _tmpNodes.push( { "level" : 0, "x" : 0, "y" : 0, "origNode" : n });
+            for(i = 0, l = nodes.length; i < l; i++) {
+                _tmpNodes.push( { "level" : -1, "ranked" : false, "x" : 0, "y" : 0, "origNode" : _nodes[i] });
             }
 
             for(i = 0, l = _connections.length; i < l; i++) {
@@ -1057,15 +1058,61 @@ CanvasMap = function(id, undefined) {
         }
         //The algorithm is done, apply the new x, y, positions.
         var updateNodes = function() {
-            for(var n in _tmpNodes) {
+            var i, l, n;
+
+            for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                n = _tmpNodes[i];
+                n.y = _topMargin + _ranksep * n.level;
+            }
+
+            for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                n = _tmpNodes[i];
                 if(n.origNode) {
-                    n.origNode.x = n.x;
+                    //n.origNode.x = n.x;  //NOT YET READY.
                     n.origNode.y = n.y;
                 }
             }
         }
 
+        //Assign the vertical rank to each node.
+        //Algorithm inspired by topological sort.
+        //Assumes that graph is already acyclic.
         var rank = function() {
+            var numRemaining = _tmpNodes.length,
+                currLevel = 0,
+                anyIncomingEdge = false,
+                nodesToRank = [],
+                i, j, l1, l2;
+
+            while(numRemaining > 0) {
+                for(i = 0, l1 = _tmpNodes.length; i < l1; i++) {
+                    //Already mached.  Do not process.
+                    if(_tmpNodes[i].ranked) {
+                        continue;
+                    }
+
+                    //Check if the current node has any incoming edge whose incoming node is not processed.  If so, we must wait to process it. 
+                    anyIncomingEdge = false;
+                    for(j = 0, l2 = _tmpConns.length; j < l2; j++) {
+                        if(_tmpConns[j].to === _tmpNodes[i] && !_tmpConns[j].from.ranked) {
+                            anyIncomingEdge = true;
+                            break;
+                        }
+                    }
+                    if(!anyIncomingEdge) {
+                        _tmpNodes[i].level = currLevel;
+                        nodesToRank.push(_tmpNodes[i]);
+                        numRemaining--;
+                    }
+                }
+
+                //Process all nodes found
+                for(i = 0, l = nodesToRank.length; i < l; i++) {
+                    nodesToRank[i].ranked = true;
+                }
+                nodesToRank = [];
+                currLevel++;
+            }
         }
         var ordering = function() {
         }
@@ -1084,9 +1131,16 @@ CanvasMap = function(id, undefined) {
         }
 
         rank();
+        if(debug) {
+            console.log("After ranking nodes");
+            console.dir(_tmpNodes);
+        }
+
+
         ordering();
         position();
         makeSplines();
         updateNodes();
+        that.redraw();
     }
 }
