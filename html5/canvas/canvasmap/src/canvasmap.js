@@ -1138,8 +1138,8 @@ CanvasMap = function(id, undefined) {
         //Order the nodes at each rank.
         var ordering = function() {
             var currRank, currParent, maxRank, processNodes, currOrder, childNodes,
-                distance, start,
-                i, j, l;
+                distance, start, 
+                i, j, k, l, l2;
 
             maxRank = -1;
             processNodes = [];
@@ -1187,6 +1187,29 @@ CanvasMap = function(id, undefined) {
                 }
 
                 processNodes.shift();
+            }
+
+            //If multiple nodes on same rank have same position, move all nodes to the RIGHT starting with node at same position.
+            for(currRank = 0; currRank < maxRank; currRank++) {
+                processNodes = [];
+                for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                    if(_tmpNodes[i].rank == currRank) {
+                        processNodes.push(_tmpNodes[i]);
+                    }
+
+                    processNodes.sort(function(a, b) { 
+                        return a.order - b.order;
+                    });
+
+                    //Search backwards for pairs of nodes with same order.  If match, increment orders.
+                    for(l2 = processNodes.length, j = l2 - 1; j > 0; j--) {
+                        if(processNodes[j].order === processNodes[j - 1].order) {
+                            for(k = j; k < l2; k++) {
+                                processNodes[k].order++;
+                            }
+                        }
+                    }
+                }
             }
             
 
