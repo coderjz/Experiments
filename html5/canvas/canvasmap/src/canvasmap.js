@@ -35,6 +35,8 @@ CanvasMap = function(id, undefined) {
     var defaultTextColor = "black";
     var defaultTextFont = "10px sans-serif";
 
+    var resizeCanvasOnRedraw = true;
+
 
     //Mathematical functions
     this.math = {
@@ -305,12 +307,14 @@ CanvasMap = function(id, undefined) {
     //Method to Render one or more nodes
     var _render = function(nodes) {
         var i, l, type;
+
         for(i = 0, l = nodes.length; i < l; i++) {
             type = that.nodeTypes[nodes[i].type]
             if(type) {
                 _renderNode(type, nodes[i]);
             }
         }
+
     }
 
     //Add a connection between nodes and render it immediately.
@@ -366,6 +370,14 @@ CanvasMap = function(id, undefined) {
         		context.clearRect(originX / scale, originY / scale, canvas.width / scale, canvas.height / scale);
         		_renderConnection(_connections);
         		_render(_nodes);
+
+
+                if(resizeCanvasOnRedraw) {
+                    //Check if canvas must be made bigger.  TODO: Make more efficient by having function updateCanvasSize handle array of nodes
+                    for(var i = 0; i < _nodes.length; i++) {
+                        _updateCanvasSize(_nodes[i]);
+                    }
+                }
 
         		scrollbars.redraw();
 			}
@@ -1092,7 +1104,7 @@ CanvasMap = function(id, undefined) {
                 i, j, l1, l2;
 
             while(numRemaining > 0 && prevNumRemaining !== numRemaining) {
-                prevRemaining = numRemaining;
+                prevNumRemaining = numRemaining;
                 for(i = 0, l1 = _tmpNodes.length; i < l1; i++) {
                     //Already mached.  Do not process.
                     if(_tmpNodes[i].ranked) {
