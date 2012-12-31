@@ -46,8 +46,9 @@
         <div class="instructionBox center">
             Tests<br>
             <input type="button" onclick="test1();" value="Test 1" />
-            <input type="button" onclick="test2();" value="Test 2" />
+            <input type="button" onclick="test2();" value="Test 2" /><br>
             <input type="button" onclick="test3();" value="Test 3" />
+            <input type="button" onclick="test4();" value="Test 4" />
         </div>
 
         <div class="instructionBox center">
@@ -62,14 +63,14 @@
             var nodes = [];
             var nodePos = 1;
 
-            function addNode(parentText) {
+            function addNode(parentText, customText) {
                 var x = 30 + Math.floor(Math.random() * 25) * 10;
                 var y = 30 + Math.floor(Math.random() * 25) * 10;
                 var newNode = {
                     x : x,
                     y : y,
                     r: 10,
-                    text : nodePos,
+                    text : customText || nodePos,
                     type: "circle"
                 };
 
@@ -169,6 +170,40 @@
                 addNode("4");
                 addNode("8, 10");
                 addNode("3");
+            }
+
+            function test4() {
+                resetCanvas();
+                addNode(null, "Q3618");
+                addNode("Q3618", "Exit3618");
+                addNode("Exit3618", "Q3619");
+                addNode("Q3619", "Q3620");
+                addNode("Q3620", "Entry3625");
+                addNode("Entry3625", "Q3625");
+                addNode("Q3625", "Entry3626");
+                addNode("Entry3626", "Q3626");
+                addNode("Entry3626,Entry3625,Q3626", "Q3627");
+                addNode("Q3627", "Q1");
+                addNode("Q1", "Q239");
+                addNode("Q239", "Q2798");
+                addNode("Q2798", "Q19");
+                addNode("Q19", "Q21");
+                addNode("Q21", "Q150");
+                addNode("Q150", "Q26");
+                addNode("Q26", "Q24");
+                addNode("Q24", "Q111");
+                addNode("Q111", "Q93");
+                addNode("Q93", "Q116");
+                addNode("Q116", "Q3");
+                addNode("Q3", "Q3Exit");
+                addNode("Q3Exit", "Q74");
+                addNode("Q74,Q3Exit", "Q3634");
+                addNode("Q3634", "Q3643Entry");
+                addNode("Q3643Entry", "Q3643");
+                addNode("Q3643", "Q3645");
+                addNode("Q3645", "Q3649");
+                addNode("Q3649", "Q3650");
+                addNode("Exit3618,Q3650", "-999");
             }
 
         </script>
