@@ -825,6 +825,7 @@ CanvasMap = function(id, undefined) {
 
     this.moveDown = function(delta) {
         var actualMaxY = (sizeY - canvas.height) * scale + (scale - 1) * canvas.height;
+        actualMaxY = Math.max(0, actualMaxY);
         if(delta < 0) {
             this.moveUp(delta * -1);
             return;
@@ -837,6 +838,7 @@ CanvasMap = function(id, undefined) {
 
     this.moveRight = function(delta) {
         var actualMaxX = (sizeX - canvas.width) * scale + (scale - 1) * canvas.width;
+        actualMaxX = Math.max(0, actualMaxX);
         if(delta < 0) {
             this.moveLeft(delta * -1);
             return;
@@ -873,6 +875,15 @@ CanvasMap = function(id, undefined) {
 
         //Use identity matrix to reset transform
         context.setTransform(1, 0, 0, 1, 0, 0);
+        _redraw.Do();
+    }
+
+
+    this.resize = function(newWidth, newHeight) {
+        originX = 0;
+        originY = 0;
+        canvas.width = newWidth;
+        canvas.height = newHeight;
         _redraw.Do();
     }
 
