@@ -416,121 +416,7 @@ CanvasMap = function(id, undefined) {
         window.open(c.toDataURL(), "Canvas Image Data", "left=100,top=100");
     }
 
-    //Generic method to attach an event to a DOM element.
-    var _domAddEvent = function(elem, event, fn) {
-        if(elem.addEventListener) {
-            elem.addEventListener(event, fn, false);
-        } else if(elem.attachEvent) {
-            elem.attachEvent('on' + event, fn);
-        } else {
-            elem["on" + event] = fn;
-        }
-    }
 
-    //Function to verify which nodes should fire mouseenter, mouseleave, mouseover events.
-    var _handleNodeMouseEvents = function(e) {
-        e = e || window.event;
-        var pos = _translateMouseCoords(_getMouseCoords.call(canvas, e)),
-            localMouseOver = [],
-            nodePos = -1,
-            eventType = "",
-            i = 0,
-            l = 0,
-            nodeType, 
-            bbox,
-            isEnter,
-            isLeave;
-
-
-        //First, update dragging.
-		//If not dragging any element, then refresh the scrollbars
-		if(draggingNode.isDrag) {
-			draggingNode.updateDrag(pos);
-		} else if(draggingCanvas.isDrag) {
-			draggingCanvas.updateDrag(pos);
-		} else {
-			scrollbars.updateMove(pos);
-		}
-
-        for(i = 0, l = _nodes.length; i < l; i++) {
-            nodeType = that.nodeTypes[_nodes[i].type];
-            bbox = nodeType.getBBox.apply(_nodes[i]);
-            
-            //Is the node inside the bounding box?  If so, also check the hitTest function
-            if(pos.x >= bbox.l && pos.x <= bbox.r && 
-               pos.y >= bbox.t && pos.y <= bbox.b && 
-               nodeType.hitTest.call(_nodes[i], pos.x, pos.y)) {
-                  localMouseOver.push(_nodes[i]);
-                  nodePos = _arrayIndexOf.call(_mouseOverNodes, _nodes[i]);
-
-                  eventType = "move";
-
-                  //Mouse enter
-                  if(nodePos === -1) {
-                      _mouseOverNodes.push(_nodes[i]);
-                      eventType = "enter";
-                      isEnter = true;
-                  } else {
-                      eventType = "move";
-                  }
-
-                  _invokeNodeMouseEvent(_nodes[i], eventType);
-            }
-        }
-
-        //We have left a previous node if we didn't visit it during this mouse event.
-        for(i = _mouseOverNodes.length - 1; i >= 0; i--) {
-            if(_arrayIndexOf.call(localMouseOver, _mouseOverNodes[i]) === -1) {
-                _invokeNodeMouseEvent(_mouseOverNodes[i], "leave");
-                _mouseOverNodes.splice(i, 1);
-                isLeave = true;
-            }
-        }
-
-        if(isEnter || isLeave) {
-            _redraw.Do();
-        }
-    }
-
-    //When leaving the canvas, fire all leave node mouse events
-    var _leaveNodeMouseEvents = function(e) {
-        e = e || window.event;
-        var i, l;
-
-        for(i = 0, l = _mouseOverNodes.length; i < l; i++) {
-            _invokeNodeMouseEvent(_mouseOverNodes[i], "leave");
-        }
-        _mouseOverNodes = []; 
-
-        //Prevent scrollbars from dragging if leave canvas and come back in.
-        scrollbars.endDrag();
-		draggingNode.endDrag();
-		draggingCanvas.endDrag();
-    }
-
-    //Mouse down
-    _handleMouseDown = function(e) {
-		var pos = _translateMouseCoords(_getMouseCoords.call(canvas, e)),
-			dragPerformed = scrollbars.beginDrag(pos);
-
-		if(!dragPerformed) { 
-			dragPerformed =	draggingNode.beginDrag(pos);
-		}
-
-		if(!dragPerformed) {
-			dragPerformed =	draggingCanvas.beginDrag(pos);
-		}
-
-        //Prevent change of cursor to selection.  Code from: http://stackoverflow.com/questions/2659999/html5-canvas-hand-cursor-problems
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    _handleMouseUp = function(e) {
-        scrollbars.endDrag();
-		draggingNode.endDrag();
-		draggingCanvas.endDrag();
-    }
 
     var _invokeNodeMouseEvent = function(node, eventType) {
         var i, l;
@@ -990,10 +876,128 @@ CanvasMap = function(id, undefined) {
         _redraw.Do();
     }
 
+    var canvasMouseEvents = function() {
+        //Generic method to attach an event to a DOM element.
+        var _domAddEvent = function(elem, event, fn) {
+            if(elem.addEventListener) {
+                elem.addEventListener(event, fn, false);
+            } else if(elem.attachEvent) {
+                elem.attachEvent('on' + event, fn);
+            } else {
+                elem["on" + event] = fn;
+            }
+        }
 
-    //Attach events to canvas mouse behaviour
-    _domAddEvent(canvas, "mousemove", _handleNodeMouseEvents);
-    _domAddEvent(canvas, "mouseout", _leaveNodeMouseEvents);
-    _domAddEvent(canvas, "mousedown", _handleMouseDown);
-    _domAddEvent(canvas, "mouseup", _handleMouseUp);
+        //Function to verify which nodes should fire mouseenter, mouseleave, mouseover events.
+        var _handleNodeMouseEvents = function(e) {
+            e = e || window.event;
+            var pos = _translateMouseCoords(_getMouseCoords.call(canvas, e)),
+                localMouseOver = [],
+                nodePos = -1,
+                eventType = "",
+                i = 0,
+                l = 0,
+                nodeType, 
+                bbox,
+                isEnter,
+                isLeave;
+
+
+            //First, update dragging.
+            //If not dragging any element, then refresh the scrollbars
+            if(draggingNode.isDrag) {
+                draggingNode.updateDrag(pos);
+            } else if(draggingCanvas.isDrag) {
+                draggingCanvas.updateDrag(pos);
+            } else {
+                scrollbars.updateMove(pos);
+            }
+
+            for(i = 0, l = _nodes.length; i < l; i++) {
+                nodeType = that.nodeTypes[_nodes[i].type];
+                bbox = nodeType.getBBox.apply(_nodes[i]);
+                
+                //Is the node inside the bounding box?  If so, also check the hitTest function
+                if(pos.x >= bbox.l && pos.x <= bbox.r && 
+                   pos.y >= bbox.t && pos.y <= bbox.b && 
+                   nodeType.hitTest.call(_nodes[i], pos.x, pos.y)) {
+                      localMouseOver.push(_nodes[i]);
+                      nodePos = _arrayIndexOf.call(_mouseOverNodes, _nodes[i]);
+
+                      eventType = "move";
+
+                      //Mouse enter
+                      if(nodePos === -1) {
+                          _mouseOverNodes.push(_nodes[i]);
+                          eventType = "enter";
+                          isEnter = true;
+                      } else {
+                          eventType = "move";
+                      }
+
+                      _invokeNodeMouseEvent(_nodes[i], eventType);
+                }
+            }
+
+            //We have left a previous node if we didn't visit it during this mouse event.
+            for(i = _mouseOverNodes.length - 1; i >= 0; i--) {
+                if(_arrayIndexOf.call(localMouseOver, _mouseOverNodes[i]) === -1) {
+                    _invokeNodeMouseEvent(_mouseOverNodes[i], "leave");
+                    _mouseOverNodes.splice(i, 1);
+                    isLeave = true;
+                }
+            }
+
+            if(isEnter || isLeave) {
+                _redraw.Do();
+            }
+        }
+
+        //When leaving the canvas, fire all leave node mouse events
+        var _leaveNodeMouseEvents = function(e) {
+            e = e || window.event;
+            var i, l;
+
+            for(i = 0, l = _mouseOverNodes.length; i < l; i++) {
+                _invokeNodeMouseEvent(_mouseOverNodes[i], "leave");
+            }
+            _mouseOverNodes = []; 
+
+            //Prevent scrollbars from dragging if leave canvas and come back in.
+            scrollbars.endDrag();
+            draggingNode.endDrag();
+            draggingCanvas.endDrag();
+        }
+
+        //Mouse down
+        _handleMouseDown = function(e) {
+            var pos = _translateMouseCoords(_getMouseCoords.call(canvas, e)),
+                dragPerformed = scrollbars.beginDrag(pos);
+
+            if(!dragPerformed) { 
+                dragPerformed =	draggingNode.beginDrag(pos);
+            }
+
+            if(!dragPerformed) {
+                dragPerformed =	draggingCanvas.beginDrag(pos);
+            }
+
+            //Prevent change of cursor to selection.  Code from: http://stackoverflow.com/questions/2659999/html5-canvas-hand-cursor-problems
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        _handleMouseUp = function(e) {
+            scrollbars.endDrag();
+            draggingNode.endDrag();
+            draggingCanvas.endDrag();
+        }
+
+        //Attach events to canvas mouse behaviour
+        _domAddEvent(canvas, "mousemove", _handleNodeMouseEvents);
+        _domAddEvent(canvas, "mouseout", _leaveNodeMouseEvents);
+        _domAddEvent(canvas, "mousedown", _handleMouseDown);
+        _domAddEvent(canvas, "mouseup", _handleMouseUp);
+    }
+    canvasMouseEvents();
 }
