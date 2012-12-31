@@ -39,12 +39,14 @@
             Add To Canvas<br>
             <input type="button" onclick="addNode(null);" value="Node" />&nbsp;<br><br>
             <input type="button" onclick="addNode(document.getElementById('txtNodeParent').value);" value="Node With Connection" /><br>
-            Parent Nodes: <input type="text" id="txtNodeParent" style="width:50px;margin-top:5px;" value="1" />
+            Parent Nodes: <input type="text" id="txtNodeParent" style="width:50px;margin-top:10px;" value="1" /><br>
+            <span style="font-weight:normal">(Use comma separated list)</span>
         </div>
 
         <div class="instructionBox center">
             Tests<br>
             <input type="button" onclick="test1();" value="Test 1" />
+            <input type="button" onclick="test2();" value="Test 2" />
         </div>
 
         <div class="instructionBox center">
@@ -79,7 +81,7 @@
                     var parentTextList = parentText.split(",");
                     for(var i = 0; i < parentTextList.length; i++) {
                         var oldNode = null;
-                        for(var j = 0; i < nodes.length; j++) {
+                        for(var j = 0; j < nodes.length; j++) {
                             if(nodes[j].text == parentTextList[i]) {
                                 oldNode = nodes[j];
                                 break;
@@ -133,6 +135,24 @@
                 addNode("3");
                 addNode("5");
                 addNode("4,6");
+            }
+
+            function test2() {
+                resetCanvas();
+                addNode();
+                addNode("1");
+                addNode("2");
+                addNode("2");
+                addNode("3");
+                addNode("5");
+                addNode("6");
+                addNode("7");
+                addNode("4");
+                addNode("4");
+                addNode("8, 10");
+
+
+                addNode("xxx");
             }
         </script>
     </body>
