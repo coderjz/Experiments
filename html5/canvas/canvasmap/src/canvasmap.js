@@ -1150,6 +1150,39 @@ CanvasMap = function(id, undefined) {
             }
         }
 
+        var addVirtualNodes = function() {
+            var rank, order, maxRank, fromNode, toNode, conn, i, l;
+
+            for(var i = 0, l = _tmpConns.length; i < l; i++) {
+                conn = _tmpConns[i];
+                if(Math.abs(conn.from.rank - conn.to.rank) > 1) {
+                    rank = Math.min(conn.from.rank, conn.to.rank) + 1;
+                    maxRank = Math.max(conn.from.rank, conn.to.rank);
+                    order = conn.from.order;
+                    fromNode = conn.from;
+
+                    //Add each virtual node and connection to each previous node/previous virtual node
+                    for( ; rank < maxRank; rank++) {
+                        toNode = { "rank" : rank,
+                                 "ranked" : true,
+                                 "order" : order,
+                                 "x" : 0,
+                                 "y" : 0,
+                                 "origNode" : null
+                        } 
+
+                        _tmpNodes.push(toNode);
+                        _tmpConns.push({ "from" : fromNode, "to" : toNode, "origConn" : null });
+                        
+                        fromNode = toNode;
+                    }
+
+                    //Add connection from last virtual node to actual destination.
+                    _tmpConns.push({ "from" : fromNode, "to" : conn.to, "origConn" : null });
+                }
+            }
+        }
+
         //Order the nodes at each rank.
         var ordering = function() {
             var currRank, currParent, maxRank, processNodes, currOrder, childNodes,
@@ -1335,6 +1368,7 @@ CanvasMap = function(id, undefined) {
         }
 
 
+        addVirtualNodes();
         ordering();
 
         if(debug) {
