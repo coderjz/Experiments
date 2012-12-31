@@ -129,6 +129,9 @@
 
             var cm = new CanvasMap("mainCanvas");
             var currNode = null;
+            var selectedCanvas = 0;
+            var nextConnection = 0;
+
 
             function updateCanvas(pos) {
                 var canvas = document.getElementById("mainCanvas");
@@ -142,9 +145,11 @@
                 for(var i = 0, l = currNode.length; i < l; i++) {
                     cm.addNode(currNode[i]);
                 }
+
+                setNodeColors(pos, 0);
+                cm.redraw();
             }
 
-            var nextConnection = 0;
             function addConnection() {
                 if(nextConnection >= currNode.length - 1) {
                     return;
@@ -166,15 +171,57 @@
             }
 
             domAddEvent(document.getElementById('cmbShapes'), 'change', function() {
-                var index = document.getElementById('cmbShapes').selectedIndex;
-                updateCanvas(index);
+                cm.clear();
+                selectedCanvas = document.getElementById('cmbShapes').selectedIndex;
+                updateCanvas(selectedCanvas);
             });
             domAddEvent(document.getElementById('btnNextLine'), 'click', function() {
                 addConnection();
+                setNodeColors(selectedCanvas, nextConnection);
+                cm.redraw();
             });
 
 
-            updateCanvas(0);
+            function setNodeColors(canvasIndex, nodeIndex) {
+                var prevNode, currNode, nextNode;
+
+                if(nodeIndex < 0) {
+                    return;
+                }
+                
+                if(nodeIndex < nodes[canvasIndex].length) {
+                    currNode = nodes[canvasIndex][nodeIndex];
+
+                    currNode.fillStyle = "#08AD00";
+                    currNode.strokeStyle = "#09BF00";
+                    currNode.lineWidth = 2;
+                    currNode.shadowColor="#0AD100";
+                    currNode.shadowBlur = 5;       
+                }
+
+                if(nodeIndex < nodes[canvasIndex].length - 1) {
+                    nextNode = nodes[canvasIndex][nodeIndex + 1];
+                    
+                    nextNode.fillStyle = "#BC0F00";
+                    nextNode.strokeStyle = "#D80E00";
+                    nextNode.lineWidth = 2;
+                    nextNode.shadowColor="#E80B00";
+                    nextNode.shadowBlur = 5;       
+                }
+
+                if(nodeIndex != 0 && nodeIndex <= nodes[canvasIndex].length) {
+                    var prevNode = nodes[canvasIndex][nodeIndex - 1];
+
+                    prevNode.fillStyle = null;
+                    prevNode.strokeStyle = null;
+                    prevNode.lineWidth = null;
+                    prevNode.shadowColor= null;
+                    prevNode.shadowBlur = null;
+                }
+
+            }
+            updateCanvas(selectedCanvas);
+
 
             //Text TEST.
             //TODO: Put text option in library itself (requires updating each shape to have a text drawing function that would consider the text to draw, text distance from outside edge, and angle of drawing text)
@@ -183,39 +230,7 @@
             context.font = "bold 18px 'Times New Roman', Times, serif"
             context.fillText("1", 56, 184);
             context.fillText("2", 106, 233);
-
-            //Drawing green circle TEST
-            context.fillStyle = "#08AD00";
-            context.strokeStyle = "#09BF00";
-            context.lineWidth = 2;
-            context.shadowColor="#0AD100";
-            context.shadowBlur = 5;       
-            context.beginPath();
-            context.arc(60, 200, 10, 0, 2 * Math.PI, true);
-            context.fill();
-            context.stroke();
-            context.closePath();
-
-            context.fillStyle = "#000000";
-            context.shadowColor= undefined; 
-            context.shadowBlur = undefined;       
-
-
-            //Drawing red circle Test
-            context.fillStyle = "#BC0F00";
-            context.strokeStyle = "#D80E00";
-            context.lineWidth = 2;
-            context.shadowColor="#E80B00";
-            context.shadowBlur = 5;       
-            context.beginPath();
-            context.arc(110, 250, 10, 0, 2 * Math.PI, true);
-            context.fill();
-            context.stroke();
-            context.closePath();
-
-            context.fillStyle = "#000000";
-            context.shadowColor= undefined; 
-            context.shadowBlur = undefined;       
+            
         </script>
     </body>
 </html>

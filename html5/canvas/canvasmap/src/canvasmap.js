@@ -341,6 +341,14 @@ CanvasMap = function(id, undefined) {
         }
     }
 
+    //Removes all nodes and connections, then redraws the canvas.
+    this.clear = function() {
+        _connections = [];
+        _nodes = [];
+        _mouseOverNodes = [];
+        _nodeEvents = { "enter" : [], "leave" : [], "move" : []};
+    }
+
 	//Object to manage redrawing the canvas with an animation loop
 	//Source for requesting next frame: http://www.html5canvastutorials.com/advanced/html5-canvas-animation-stage/
 	//Does this support multiple different canvas???
