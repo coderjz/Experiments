@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Testing Canvas Map - Mouse Events</title>
+        <script type='text/javascript' src="..\src\canvasmap.js"></script>
+        <style type="text/css">  
+            canvas { border: 1px solid black; }  
+            .instructionBox {
+                float: left;
+                padding: 10px;
+                margin-right: 30px;
+                border: 1px solid black;
+                font-weight: bold;
+            }
+
+            .instructionBox input:first-of-type {
+                margin-top:20px;
+            }
+
+            .instructionBox input {
+                min-width: 50px;
+            }
+
+            .center {
+                text-align : center;
+            }
+
+            .clear {
+                clear: both;
+            }
+        </style>  
+    </head>
+    <body>
+        <h3>Basic example</h3>
+        <canvas id="mainCanvas" width="450" height="450">
+        </canvas>  
+        <br>
+        <div class="instructionBox center">
+            Add To Canvas<br>
+            <input type="button" onclick="addNode(null);" value="Node" />&nbsp;<br><br>
+            <input type="button" onclick="addNode(document.getElementById('txtNodeParent').value);" value="Node With Connection" /><br>
+            Parent Nodes: <input type="text" id="txtNodeParent" style="width:50px;margin-top:5px;" value="1" />
+        </div>
+
+        <div class="instructionBox center">
+            Tests<br>
+            <input type="button" onclick="test1();" value="Test 1" />
+        </div>
+
+        <div class="instructionBox center">
+            Make Tree<br>
+            <input type="button" onclick="cm.transitionSimpleTree(true);" value="Transform" />
+        </div>
+
+
+        <script type='text/javascript'>
+            var cm = new CanvasMap("mainCanvas");
+
+            var nodes = [];
+            var nodePos = 1;
+
+            function addNode(parentText) {
+                var x = Math.floor(Math.random() * 25) * 10;
+                var y = Math.floor(Math.random() * 25) * 10;
+                var newNode = {
+                    x : x,
+                    y : y,
+                    r: 10,
+                    text : nodePos,
+                    type: "circle"
+                };
+
+                nodePos++;
+
+                nodes.push( newNode );
+                cm.addNode(newNode);
+
+                if(parentText) {
+                    var parentTextList = parentText.split(",");
+                    for(var i = 0; i < parentTextList.length; i++) {
+                        var oldNode = null;
+                        for(var j = 0; i < nodes.length; j++) {
+                            if(nodes[j].text == parentTextList[i]) {
+                                oldNode = nodes[j];
+                                break;
+                            }
+                        }
+
+                        if(oldNode) {
+                            cm.addConnection(oldNode, newNode);
+                        }
+                    }
+                }
+            }
+
+            function addCanvasEvents() {
+                cm.addNodeEnter(function(node) { 
+                        node.strokeStyle = "green";
+                        node.fillStyle = "rgba(0, 100, 0, 0.3)";
+                        node.strokeWidth = 5;
+                        cm.redraw();
+                    });
+
+                cm.addNodeMove(function(node) { 
+                //        console.log("MOVE: (" + node.x + "," + node.y + ")"); 
+                });
+
+                cm.addNodeLeave(function(node) { 
+                        node.strokeStyle = null;
+                        node.fillStyle = null;
+                        node.strokeWidth = null;
+                        cm.redraw();
+                });
+            }
+
+            addCanvasEvents();
+
+            function resetCanvas() {
+                cm.clear();
+                cm.redraw();
+                nodePos = 1;
+                nodes = [];
+                addCanvasEvents();
+            }
+
+
+            function test1() {
+                resetCanvas();
+                addNode();
+                addNode("1");
+                addNode("2");
+                addNode("2");
+                addNode("3");
+                addNode("5");
+                addNode("4,6");
+            }
+        </script>
+    </body>
+</html>

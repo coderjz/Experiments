@@ -1019,4 +1019,74 @@ CanvasMap = function(id, undefined) {
         _domAddEvent(canvas, "mouseup", _handleMouseUp);
     }
     canvasMouseEvents();
+
+
+    //Create a tree layout
+    //Inspired by dot algorithm, but much, much, simpler.
+    //http://www.graphviz.org/Documentation/TSE93.pdf
+    this.transitionSimpleTree = function(debug) {
+        var _tmpNodes;  //Local copy of nodes.  
+        var _tmpConns;  //Local copy of connections
+        var _nodesep; //Horizontal separation
+        var _ranksep; //Vertical separation
+
+        //Create the local copy of data to be worked on.
+        var createCopies = function() {
+            var n1, n2;
+            _tmpNodes = [];
+            _tmpConns = [];
+            for(var n in _nodes) {
+                _tmpNodes.push( { "level" : 0, "x" : 0, "y" : 0, "origNode" : n });
+            }
+
+            for(i = 0, l = _connections.length; i < l; i++) {
+                n1 = _connections[i][0];
+                n2 = _connections[i][1];
+
+                for(var j = 0; j < _tmpNodes.length; j++) {
+                    if(n1 === _tmpNodes[j].origNode) {
+                        n1 = _tmpNodes[j];
+                    }
+                    if(n2 === _tmpNodes[j].origNode) {
+                        n2 = _tmpNodes[j];
+                    }
+                }
+
+                _tmpConns.push( { "from" : n1, "to" : n2, "origConn" : _connections[i] } );
+            }
+        }
+        //The algorithm is done, apply the new x, y, positions.
+        var updateNodes = function() {
+            for(var n in _tmpNodes) {
+                if(n.origNode) {
+                    n.origNode.x = n.x;
+                    n.origNode.y = n.y;
+                }
+            }
+        }
+
+        var rank = function() {
+        }
+        var ordering = function() {
+        }
+        var position = function() {
+        }
+        var makeSplines = function() {
+        }
+
+        createCopies();
+
+        if(debug) {
+            console.log("Node Copies");
+            console.dir(_tmpNodes);
+            console.log("Connection Copies");
+            console.dir(_tmpConns);
+        }
+
+        rank();
+        ordering();
+        position();
+        makeSplines();
+        updateNodes();
+    }
 }
