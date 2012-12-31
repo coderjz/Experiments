@@ -47,6 +47,7 @@
             Tests<br>
             <input type="button" onclick="test1();" value="Test 1" />
             <input type="button" onclick="test2();" value="Test 2" />
+            <input type="button" onclick="test3();" value="Test 3" />
         </div>
 
         <div class="instructionBox center">
@@ -150,10 +151,26 @@
                 addNode("4");
                 addNode("4");
                 addNode("8, 10");
-
-
-                addNode("xxx");
+                addNode("xxx");  //This node will not connect to any others
             }
+
+
+            function test3() {
+                resetCanvas();
+                addNode();
+                addNode("1");
+                addNode("2");
+                addNode("2");
+                addNode("3");
+                addNode("5");
+                addNode("6");
+                addNode("7");
+                addNode("4");
+                addNode("4");
+                addNode("8, 10");
+                addNode("3");
+            }
+
         </script>
     </body>
 </html>

@@ -1033,6 +1033,7 @@ CanvasMap = function(id, undefined) {
         var _ranksep = 50; //Vertical separation
         var _topMargin = 20;  //Top margin to display nodes from.
         var _leftMargin = 20;  //Left margin to display nodes from.
+        var _numPasses = 2; //The number of passes (forwards or backwards) to make in the ordering algorithm.
 
         //Create the local copy of data to be worked on.
         var createCopies = function() {
@@ -1084,12 +1085,14 @@ CanvasMap = function(id, undefined) {
         //Assumes that graph is already acyclic.
         var rank = function() {
             var numRemaining = _tmpNodes.length,
+                prevNumRemaining = -1,
                 currRank = 0,
                 anyIncomingEdge = false,
                 nodesToRank = [],
                 i, j, l1, l2;
 
-            while(numRemaining > 0) {
+            while(numRemaining > 0 && prevNumRemaining !== numRemaining) {
+                prevRemaining = numRemaining;
                 for(i = 0, l1 = _tmpNodes.length; i < l1; i++) {
                     //Already mached.  Do not process.
                     if(_tmpNodes[i].ranked) {
@@ -1138,7 +1141,7 @@ CanvasMap = function(id, undefined) {
         //Order the nodes at each rank.
         var ordering = function() {
             var currRank, currParent, maxRank, processNodes, currOrder, childNodes,
-                distance, start, 
+                distance, start, relatedOrders, 
                 i, j, k, l, l2;
 
             maxRank = -1;
@@ -1190,11 +1193,21 @@ CanvasMap = function(id, undefined) {
             }
 
             //If multiple nodes on same rank have same position, move all nodes to the RIGHT starting with node at same position.
-            for(currRank = 0; currRank < maxRank; currRank++) {
-                processNodes = [];
-                for(i = 0, l = _tmpNodes.length; i < l; i++) {
-                    if(_tmpNodes[i].rank == currRank) {
-                        processNodes.push(_tmpNodes[i]);
+            var sortInsideRank = function(startRank, endRank) {
+                var locCurrRank = currRank;
+                if(!start) {
+                    start = 0;
+                }
+                if(!endRank) {
+                    endRank = maxRank - 1;
+                }
+
+                for(locCurrRank = startRank; locCurrRank <= endRank; locCurrRank++) {
+                    processNodes = [];
+                    for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                        if(_tmpNodes[i].rank == locCurrRank) {
+                            processNodes.push(_tmpNodes[i]);
+                        }
                     }
 
                     processNodes.sort(function(a, b) { 
@@ -1211,9 +1224,74 @@ CanvasMap = function(id, undefined) {
                     }
                 }
             }
+
+
             
+            //Forwards pass, set node to have average order of its parents
+            var forwardsPass = function() {
+                for(currRank = 1; currRank <= maxRank; currRank++) {
+                    for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                        if(_tmpNodes[i].rank == currRank) {
+                            relatedOrders = [];
+                            //We have a node on the current rank.  Find all children and store their order positions
+                            for(j = 0, l2 = _tmpConns.length; j < l2; j++) {
+                                if(_tmpNodes[i] === _tmpConns[j].to) {
+                                    relatedOrders.push(_tmpConns[j].from.order);
+                                }
+                            }
+                            if(relatedOrders.length > 0) {
+                                _tmpNodes[i].order = orderAverage(relatedOrders);
+                            }
+                        }
+                    }
+                    sortInsideRank(currRank, currRank);
+                }
+            }
+
+            //Backwards pass, set node to have average order of its children
+            var backwardsPass = function() {
+                for(currRank = maxRank - 1; currRank >= 0; currRank--) {
+                    for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                        if(_tmpNodes[i].rank == currRank) {
+                            relatedOrders = [];
+                            //We have a node on the current rank.  Find all children and store their order positions
+                            for(j = 0, l2 = _tmpConns.length; j < l2; j++) {
+                                if(_tmpNodes[i] === _tmpConns[j].from) {
+                                    relatedOrders.push(_tmpConns[j].to.order);
+                                }
+                            }
+                            if(relatedOrders.length > 0) {
+                                _tmpNodes[i].order = orderAverage(relatedOrders);
+                            }
+                        }
+                    }
+                    sortInsideRank(currRank, currRank);
+                }
+            }
+
+
+            sortInsideRank();
+
+
+            for(i = 0; i < _numPasses; i++) {
+                if(i % 2 === 0) {
+                    forwardsPass();
+                } else {
+                    backwardsPass();
+                }
+            }
 
             normalizeOrdering();
+        }
+
+        //Compute the average of a series of nodes.
+        //For now just a straight average, although the DOT paper suggests a weighted median works better.
+        var orderAverage = function(orders) {
+            var average = 0, i, l;
+            for(i = 0, l = orders.length; i < l; i++) {
+                average += orders[i];
+            }
+            return average / l;
         }
 
         //Set the x, y position of each node.
