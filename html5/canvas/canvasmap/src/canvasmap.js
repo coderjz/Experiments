@@ -1241,96 +1241,92 @@ CanvasMap = function(id, undefined) {
                 processNodes.shift();
             }
 
-            //If multiple nodes on same rank have same position, move all nodes to the RIGHT starting with node at same position.
-            var sortInsideRank = function(startRank, endRank) {
-                var locCurrRank = currRank;
-                if(!start) {
-                    start = 0;
-                }
-                if(!endRank) {
-                    endRank = maxRank - 1;
-                }
-
-                for(locCurrRank = startRank; locCurrRank <= endRank; locCurrRank++) {
-                    processNodes = [];
-                    for(i = 0, l = _tmpNodes.length; i < l; i++) {
-                        if(_tmpNodes[i].rank == locCurrRank) {
-                            processNodes.push(_tmpNodes[i]);
-                        }
-                    }
-
-                    processNodes.sort(function(a, b) { 
-                        return a.order - b.order;
-                    });
-
-                    //Search backwards for pairs of nodes with same order.  If match, increment orders.
-                    for(l2 = processNodes.length, j = l2 - 1; j > 0; j--) {
-                        if(processNodes[j].order === processNodes[j - 1].order) {
-                            for(k = j; k < l2; k++) {
-                                processNodes[k].order++;
-                            }
-                        }
-                    }
-                }
-            }
-
-
-            
-            //Forwards pass, set node to have average order of its parents
-            var forwardsPass = function() {
-                for(currRank = 1; currRank <= maxRank; currRank++) {
-                    for(i = 0, l = _tmpNodes.length; i < l; i++) {
-                        if(_tmpNodes[i].rank == currRank) {
-                            relatedOrders = [];
-                            //We have a node on the current rank.  Find all children and store their order positions
-                            for(j = 0, l2 = _tmpConns.length; j < l2; j++) {
-                                if(_tmpNodes[i] === _tmpConns[j].to) {
-                                    relatedOrders.push(_tmpConns[j].from.order);
-                                }
-                            }
-                            if(relatedOrders.length > 0) {
-                                _tmpNodes[i].order = orderAverage(relatedOrders);
-                            }
-                        }
-                    }
-                    sortInsideRank(currRank, currRank);
-                }
-            }
-
-            //Backwards pass, set node to have average order of its children
-            var backwardsPass = function() {
-                for(currRank = maxRank - 1; currRank >= 0; currRank--) {
-                    for(i = 0, l = _tmpNodes.length; i < l; i++) {
-                        if(_tmpNodes[i].rank == currRank) {
-                            relatedOrders = [];
-                            //We have a node on the current rank.  Find all children and store their order positions
-                            for(j = 0, l2 = _tmpConns.length; j < l2; j++) {
-                                if(_tmpNodes[i] === _tmpConns[j].from) {
-                                    relatedOrders.push(_tmpConns[j].to.order);
-                                }
-                            }
-                            if(relatedOrders.length > 0) {
-                                _tmpNodes[i].order = orderAverage(relatedOrders);
-                            }
-                        }
-                    }
-                    sortInsideRank(currRank, currRank);
-                }
-            }
-
-
-            sortInsideRank();
+           
+            sortInsideRank(0, maxRank);
 
 
             for(i = 0; i < _numPasses; i++) {
                 if(i % 2 === 0) {
-                    forwardsPass();
+                    forwardsPass(maxRank);
                 } else {
-                    backwardsPass();
+                    backwardsPass(maxRank);
                 }
             }
 
             normalizeOrdering();
+        }
+
+         //If multiple nodes on same rank have same position, move all nodes to the RIGHT starting with node at same position.
+        var sortInsideRank = function(startRank, endRank) {
+            var currRank, processNodes, 
+                i, j, k, l, l2;
+
+            for(currRank = startRank; currRank <= endRank; currRank++) {
+                processNodes = [];
+                for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                    if(_tmpNodes[i].rank == currRank) {
+                        processNodes.push(_tmpNodes[i]);
+                    }
+                }
+
+                processNodes.sort(function(a, b) { 
+                    return a.order - b.order;
+                });
+
+                //Search backwards for pairs of nodes with same order.  If match, increment orders.
+                for(l2 = processNodes.length, j = l2 - 1; j > 0; j--) {
+                    if(processNodes[j].order === processNodes[j - 1].order) {
+                        for(k = j; k < l2; k++) {
+                            processNodes[k].order++;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        //Forwards pass, set node to have average order of its parents
+        var forwardsPass = function(maxRank) {
+            var i, j, l, l2, currRank, relatedOrders;
+            for(currRank = 1; currRank <= maxRank; currRank++) {
+                for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                    if(_tmpNodes[i].rank == currRank) {
+                        relatedOrders = [];
+                        //We have a node on the current rank.  Find all children and store their order positions
+                        for(j = 0, l2 = _tmpConns.length; j < l2; j++) {
+                            if(_tmpNodes[i] === _tmpConns[j].to) {
+                                relatedOrders.push(_tmpConns[j].from.order);
+                            }
+                        }
+                        if(relatedOrders.length > 0) {
+                            _tmpNodes[i].order = orderAverage(relatedOrders);
+                        }
+                    }
+                }
+                sortInsideRank(currRank, currRank, maxRank);
+            }
+        }
+
+        //Backwards pass, set node to have average order of its children
+        var backwardsPass = function(maxRank) {
+            var i, j, l, l2, currRank, relatedOrders;
+            for(currRank = maxRank - 1; currRank >= 0; currRank--) {
+                for(i = 0, l = _tmpNodes.length; i < l; i++) {
+                    if(_tmpNodes[i].rank == currRank) {
+                        relatedOrders = [];
+                        //We have a node on the current rank.  Find all children and store their order positions
+                        for(j = 0, l2 = _tmpConns.length; j < l2; j++) {
+                            if(_tmpNodes[i] === _tmpConns[j].from) {
+                                relatedOrders.push(_tmpConns[j].to.order);
+                            }
+                        }
+                        if(relatedOrders.length > 0) {
+                            _tmpNodes[i].order = orderAverage(relatedOrders);
+                        }
+                    }
+                }
+                sortInsideRank(currRank, currRank, maxRank);
+            }
         }
 
         //Compute the average of a series of nodes.
