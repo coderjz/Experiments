@@ -1179,6 +1179,10 @@ CanvasMap = function(id, undefined) {
 
                     //Add connection from last virtual node to actual destination.
                     _tmpConns.push({ "from" : fromNode, "to" : conn.to, "origConn" : null });
+
+                    //Remove the original, "real", connection.
+                    _tmpConns.splice(i, 1);
+                    i++;  //Since we've removed element i, offset array index by 1
                 }
             }
         }
