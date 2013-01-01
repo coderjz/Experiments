@@ -1217,7 +1217,7 @@ CanvasMap = function(id, undefined) {
                 for(i = 0, l = _tmpConns.length; i < l; i++) {
                     //Node is direct child, not already being processed
                     if(_tmpConns[i].from === currParent && _tmpConns[i].to.rank === currRank + 1 && 
-                       processNodes.indexOf(_tmpConns[i].to) === -1) {
+                       _arrayIndexOf.call(processNodes, _tmpConns[i].to) === -1) {
                          childNodes.push(_tmpConns[i].to);
                     }
                 }
