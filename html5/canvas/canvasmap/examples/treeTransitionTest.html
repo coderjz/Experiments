@@ -50,7 +50,8 @@
             <input type="button" onclick="test3();" value="Test 3" />
             <input type="button" onclick="test4();" value="Test 4" /><br>
             <input type="button" onclick="test5();" value="Test 5" />
-            <input type="button" onclick="test6();" value="Test 6" />
+            <input type="button" onclick="test6();" value="Test 6" /><br>
+            <input type="button" onclick="test7();" value="Test 7" />
         </div>
 
         <div class="instructionBox center">
@@ -223,6 +224,19 @@
                 addNode("1");
                 addNode("2,3");
             }
+
+            function test7() {
+                resetCanvas();
+                addNode();
+                addNode("1");
+                addNode("1");
+                addNode("2,3");
+                addNode("4");
+                addNode("4");
+                addNode("5,6");
+            }
+
+
 
         </script>
     </body>
