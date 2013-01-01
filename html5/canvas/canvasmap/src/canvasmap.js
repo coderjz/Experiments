@@ -1303,7 +1303,7 @@ CanvasMap = function(id, undefined) {
                         }
                     }
                 }
-                sortInsideRank(currRank, currRank, maxRank);
+                sortInsideRank(currRank, currRank);
             }
         }
 
@@ -1325,7 +1325,7 @@ CanvasMap = function(id, undefined) {
                         }
                     }
                 }
-                sortInsideRank(currRank, currRank, maxRank);
+                sortInsideRank(currRank, currRank);
             }
         }
 
