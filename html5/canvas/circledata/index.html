@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+    <head><title>D&D Name Generator</title>
+        <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
+        <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js'></script>
+        <link type='text/css' href='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/themes/redmond/jquery-ui.css' rel='Stylesheet'/>
+
+        <style>
+            .ui-slider {
+                width:400px;
+            }
+
+            button {
+                margin-top:10px;
+                margin-bottom:25px;
+            }
+
+            h1 {
+                color: #163449;
+                text-align:center;
+                margin: 0 auto 1em auto;
+            
+            }
+
+            h2, h3 {
+                color: #1F4966;
+            }
+
+            hr {
+                height: 3px;
+                background-color: #1F4966;
+            }
+
+            #cntSettings {
+                float: left;
+                margin-left: 5%;
+                width: 30%;
+            }
+
+            body {
+                margin : 5%
+            }
+
+            canvas {
+                border : 1px solid black;
+                width: 50%;
+                float: left;
+            }
+
+            .sameline {
+                display : inline-block;
+                margin-top : 0;
+                margin-bottom : 0.3em;
+                padding : 0;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Circle Data Explorer</h1>
+
+        <canvas id="mainCanvas"></canvas>
+        <div id="cntSettings">
+            <h3>Number Symbols: <span id="spnSymbols"></span></h3>
+            <div id="sliderSymbols"></div>
+            
+            <h3>Symbol Radius: <span id="spnRadius"></span></h3>
+            <div id="sliderRadius"></div>
+
+            <h3>Distance Between symbols: <span id="spnDistanceBetween"></span></h3>
+            <div id="sliderDistanceBetween"></div>
+
+            <h3>Extra distance from origin: <span id="spnDistanceOrigin"></span></h3>
+            <div id="sliderDistanceOrigin"></div>
+            <br />
+
+            <h3 class="sameline">Shape Type: </h3> 
+            <select id="cmbShapeType">
+                <option value="circle" selected>Circle</option>
+            </select>
+            <br />
+
+            <h3 class="sameline">Start Color: </h3>
+            <input type="text" value="#FFFFFF" disabled="disabled">
+            <br />
+
+            <h3 class="sameline">End Color: </h3>
+            <input type="text" value="#FFFFFF" disabled="disabled">
+            <br />
+
+
+            <button id="btnRefresh">Refresh Circles</button>
+        </div>
+
+        <script type="text/javascript" src="circledata.js"></script>
+
+
+        <script type='text/javascript'>
+            var symbols = { min : 1, max : 30, value : 6 };
+            var radius = { min : 10, max : 100, value : 30, step : 10 };
+            var distanceBetween = { min : 0, max : 20, value : 0, step : 1 };
+            var distanceOrigin = { min : 0, max : 40, value : 20, step : 1 };
+
+            $(function() {
+                    $("#sliderSymbols").slider({
+                        min : symbols.min,
+                        max : symbols.max,
+                        value : symbols.value,
+                        step : symbols.step || 1,
+                        slide : function (event, ui) {
+                            symbols.value = parseInt(ui.value);
+                            $("#spnSymbols").text(symbols.value);
+                            circleData.numSymbols = symbols.value;
+                        }
+                    }); 
+                    $("#spnSymbols").text(symbols.value);
+
+                    $("#sliderRadius").slider({
+                        min : radius.min,
+                        max : radius.max,
+                        value : radius.value,
+                        step : radius.step || 1,
+                        slide : function (event, ui) {
+                            radius.value = parseInt(ui.value);
+                            $("#spnRadius").text(radius.value);
+                            circleData.symbolRadius = radius.value;
+                        }
+                    }); 
+                    $("#spnRadius").text(radius.value);
+              
+                    $("#sliderDistanceBetween").slider({
+                        min : distanceBetween.min,
+                        max : distanceBetween.max,
+                        value : distanceBetween.value,
+                        step : distanceBetween.step || 1,
+                        slide : function (event, ui) {
+                            distanceBetween.value = parseInt(ui.value);
+                            $("#spnDistanceBetween").text(distanceBetween.value);
+                            circleData.distanceBetween = distanceBetween.value;
+                        }
+                    }); 
+                    $("#spnDistanceBetween").text(distanceBetween.value);
+ 
+                    $("#sliderDistanceOrigin").slider({
+                        min : distanceOrigin.min,
+                        max : distanceOrigin.max,
+                        value : distanceOrigin.value,
+                        step : distanceOrigin.step || 1,
+                        slide : function (event, ui) {
+                            distanceOrigin.value = parseInt(ui.value);
+                            $("#spnDistanceOrigin").text(distanceOrigin.value);
+                            circleData.distanceOrigin = distanceOrigin.value;
+                        }
+                    }); 
+                    $("#spnDistanceOrigin").text(distanceOrigin.value);
+
+                    $("#btnRefresh").click(function() {
+                        circleData.draw();
+                    });
+
+                   $("button").button();
+            });
+
+            circleData.setCanvas("mainCanvas");
+            circleData.draw();
+        </script>
+    </body>
+</html>
+
