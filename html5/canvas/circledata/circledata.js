@@ -39,7 +39,7 @@ circleData.minDistance = function() {
     return Math.ceil(Math.max(2 * circleData.symbolRadius, (circleData.numSymbols * circleData.symbolRadius) / Math.PI));
 }
 
-circleData.draw = function() {
+circleData.draw = function(angleDelta) {
     var c = circleData,
         center = c.getCenter(),
         dmin = circleData.minDistance(),
@@ -50,10 +50,14 @@ circleData.draw = function() {
         return;
     }
 
+    if(!angleDelta) {
+        angleDelta = 0;
+    }
+
     circleData.clear();
 
     for(i = 0; i < c.numSymbols; i++) {
-        angle = (i / c.numSymbols) * 2 * Math.PI;
+        angle = angleDelta + ((i / c.numSymbols) * 2 * Math.PI);
         x = center[0] + (dmin + c.distanceOrigin) * Math.cos(angle);
         y = center[1] + (dmin + c.distanceOrigin) * Math.sin(angle);
         c.context.beginPath();
@@ -70,4 +74,21 @@ circleData.clear = function() {
     //Use identity matrix to reset transform
     circleData.context.clearRect(0, 0, circleData.canvas.width, circleData.canvas.height);
 
+}
+
+
+circleData.spin = function(time, numSpins, tween) {    
+    var framesPerSec = 60,
+        currIteration = 1,
+        numIterations = time * framesPerSec,
+        radianDelta = Math.PI * 2 * (numSpins / numIterations),
+
+    f = function() {
+        if(currIteration <= numIterations) {
+            circleData.draw(radianDelta * currIteration);
+            currIteration++;
+            setTimeout(f, 1000 / framesPerSec);
+        }
+    }
+    f();
 }
