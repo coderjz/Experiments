@@ -5,8 +5,8 @@ circleData.symbolRadius = 30;
 circleData.distanceBetween = 0;
 circleData.distanceOrigin = 20;
 circleData.shapeType = "circle";
-circleData.startColor = "#FFFFFF";
-circleData.endColor = "#FFFFFF";
+circleData.startColor = {"r" : 255, "g" : 255, "b" : 255};
+circleData.endColor = {"r" : 255, "g" : 255, "b" : 255};
 circleData.canvas = null;
 circleData.context = null;
 
@@ -44,6 +44,7 @@ circleData.draw = function(angleDelta) {
         center = c.getCenter(),
         dmin = circleData.minDistance(),
         angle, x, y,
+        rgbDelta,
         i;
 
     if(!center) { 
@@ -56,6 +57,12 @@ circleData.draw = function(angleDelta) {
 
     circleData.clear();
 
+    rgbDelta = {
+        r : ((circleData.endColor.r - circleData.startColor.r) /  Math.max(c.numSymbols - 1, 1)),
+        g : ((circleData.endColor.g - circleData.startColor.g) /  Math.max(c.numSymbols - 1, 1)),
+        b : ((circleData.endColor.b - circleData.startColor.b) /  Math.max(c.numSymbols - 1, 1))
+    }
+
     for(i = 0; i < c.numSymbols; i++) {
         angle = angleDelta + ((i / c.numSymbols) * 2 * Math.PI);
         x = center[0] + (dmin + c.distanceOrigin) * Math.cos(angle);
@@ -63,6 +70,12 @@ circleData.draw = function(angleDelta) {
         c.context.beginPath();
         c.context.arc(x, y, circleData.symbolRadius, 0, 2 * Math.PI, true);
         c.context.stroke();
+
+        c.context.fillStyle = "rgb(" + (circleData.startColor.r + Math.floor(rgbDelta.r * i)).toString() + "," +
+                                       (circleData.startColor.g + Math.floor(rgbDelta.g * i)).toString() + "," +   
+                                       (circleData.startColor.b + Math.floor(rgbDelta.b * i)).toString() + ")";
+
+        c.context.fill();
         c.context.closePath();
     }
 }

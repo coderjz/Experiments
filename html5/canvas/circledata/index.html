@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
-    <head><title>D&D Name Generator</title>
+    <head><title>Circles</title>
         <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
         <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js'></script>
+        <script type="text/javascript" src="lib/colorpicker/js/colorpicker.js"></script>
         <link type='text/css' href='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/themes/redmond/jquery-ui.css' rel='Stylesheet'/>
+        <link rel="stylesheet" media="screen" type="text/css" href="lib/colorpicker/css/colorpicker.css" />
 
         <style>
             .ui-slider {
@@ -53,6 +55,11 @@
                 margin-bottom : 0.3em;
                 padding : 0;
             }
+
+            /* Make color picker on top of JQuery UI Slider */
+            .colorpicker {
+                z-index : 3;
+            }
         </style>
     </head>
     <body>
@@ -80,11 +87,11 @@
             <br />
 
             <h3 class="sameline">Start Color: </h3>
-            <input type="text" value="#FFFFFF" disabled="disabled">
+            <input type="text" id='txtStartColor' value="#3DC461">
             <br />
 
             <h3 class="sameline">End Color: </h3>
-            <input type="text" value="#FFFFFF" disabled="disabled">
+            <input type="text" id='txtEndColor' value="#2A24C9">
             <br />
 
 
@@ -101,67 +108,110 @@
             var distanceOrigin = { min : 0, max : 40, value : 20, step : 1 };
 
             $(function() {
-                    $("#sliderSymbols").slider({
-                        min : symbols.min,
-                        max : symbols.max,
-                        value : symbols.value,
-                        step : symbols.step || 1,
-                        slide : function (event, ui) {
-                            symbols.value = parseInt(ui.value);
-                            $("#spnSymbols").text(symbols.value);
-                            circleData.numSymbols = symbols.value;
-                        }
-                    }); 
-                    $("#spnSymbols").text(symbols.value);
+            $("#sliderSymbols").slider({
+                    min : symbols.min,
+                    max : symbols.max,
+                    value : symbols.value,
+                    step : symbols.step || 1,
+                    slide : function (event, ui) {
+                        symbols.value = parseInt(ui.value);
+                        $("#spnSymbols").text(symbols.value);
+                        circleData.numSymbols = symbols.value;
+                    }
+                }); 
+                $("#spnSymbols").text(symbols.value);
 
-                    $("#sliderRadius").slider({
-                        min : radius.min,
-                        max : radius.max,
-                        value : radius.value,
-                        step : radius.step || 1,
-                        slide : function (event, ui) {
-                            radius.value = parseInt(ui.value);
-                            $("#spnRadius").text(radius.value);
-                            circleData.symbolRadius = radius.value;
-                        }
-                    }); 
-                    $("#spnRadius").text(radius.value);
-              
-                    $("#sliderDistanceBetween").slider({
-                        min : distanceBetween.min,
-                        max : distanceBetween.max,
-                        value : distanceBetween.value,
-                        step : distanceBetween.step || 1,
-                        slide : function (event, ui) {
-                            distanceBetween.value = parseInt(ui.value);
-                            $("#spnDistanceBetween").text(distanceBetween.value);
-                            circleData.distanceBetween = distanceBetween.value;
-                        }
-                    }); 
-                    $("#spnDistanceBetween").text(distanceBetween.value);
- 
-                    $("#sliderDistanceOrigin").slider({
-                        min : distanceOrigin.min,
-                        max : distanceOrigin.max,
-                        value : distanceOrigin.value,
-                        step : distanceOrigin.step || 1,
-                        slide : function (event, ui) {
-                            distanceOrigin.value = parseInt(ui.value);
-                            $("#spnDistanceOrigin").text(distanceOrigin.value);
-                            circleData.distanceOrigin = distanceOrigin.value;
-                        }
-                    }); 
-                    $("#spnDistanceOrigin").text(distanceOrigin.value);
+                $("#sliderRadius").slider({
+                    min : radius.min,
+                    max : radius.max,
+                    value : radius.value,
+                    step : radius.step || 1,
+                    slide : function (event, ui) {
+                        radius.value = parseInt(ui.value);
+                        $("#spnRadius").text(radius.value);
+                        circleData.symbolRadius = radius.value;
+                    }
+                }); 
+                $("#spnRadius").text(radius.value);
+          
+                $("#sliderDistanceBetween").slider({
+                    min : distanceBetween.min,
+                    max : distanceBetween.max,
+                    value : distanceBetween.value,
+                    step : distanceBetween.step || 1,
+                    slide : function (event, ui) {
+                        distanceBetween.value = parseInt(ui.value);
+                        $("#spnDistanceBetween").text(distanceBetween.value);
+                        circleData.distanceBetween = distanceBetween.value;
+                    }
+                }); 
+                $("#spnDistanceBetween").text(distanceBetween.value);
 
-                    $("#btnRefresh").click(function() {
-                        circleData.draw();
-                    });
+                $("#sliderDistanceOrigin").slider({
+                    min : distanceOrigin.min,
+                    max : distanceOrigin.max,
+                    value : distanceOrigin.value,
+                    step : distanceOrigin.step || 1,
+                    slide : function (event, ui) {
+                        distanceOrigin.value = parseInt(ui.value);
+                        $("#spnDistanceOrigin").text(distanceOrigin.value);
+                        circleData.distanceOrigin = distanceOrigin.value;
+                    }
+                }); 
+                $("#spnDistanceOrigin").text(distanceOrigin.value);
 
-                   $("button").button();
+                $("#txtStartColor").ColorPicker({
+                    onSubmit: function(hsb, hex, rgb, el) {
+                        $(el).val("#" + hex);
+                        $(el).ColorPickerHide();
+                        circleData.startColor = rgb;
+                    },
+                    onChange : function(hsb, hex, rgb, el) {
+                        $(el).val("#" + hex);
+                        circleData.startColor = rgb;
+                    },
+                    onBeforeShow: function () {
+                        $(this).ColorPickerSetColor(this.value);
+                    }
+                });
+
+
+                $("#txtEndColor").ColorPicker({
+                    onSubmit: function(hsb, hex, rgb, el) {
+                        $(el).val("#" + hex);
+                        $(el).ColorPickerHide();
+                        circleData.endColor = rgb;
+                    },
+                    onChange : function(hsb, hex, rgb, el) {
+                        $(el).val("#" + hex);
+                        circleData.endColor = rgb;
+                    },
+                    onBeforeShow: function () {
+                        $(this).ColorPickerSetColor(this.value);
+                    }
+                });
+
+                $("#btnRefresh").click(function() {
+                    circleData.draw();
+                });
+
+                $("button").button();
+
+                circleData.startColor = {
+                    "r" : parseInt($("#txtStartColor").val().replace("#", "").substring(0, 2), 16),
+                    "g" : parseInt($("#txtStartColor").val().replace("#", "").substring(2, 4), 16),
+                    "b" : parseInt($("#txtStartColor").val().replace("#", "").substring(4, 6), 16)
+                }
+
+                circleData.endColor = {
+                    "r" : parseInt($("#txtEndColor").val().replace("#", "").substring(0, 2), 16),
+                    "g" : parseInt($("#txtEndColor").val().replace("#", "").substring(2, 4), 16),
+                    "b" : parseInt($("#txtEndColor").val().replace("#", "").substring(4, 6), 16)
+                }
+
+                circleData.setCanvas("mainCanvas");
+                circleData.draw();
             });
-
-            circleData.setCanvas("mainCanvas");
-            circleData.draw();
         </script>
     </body>
 </html>
