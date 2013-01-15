@@ -89,18 +89,63 @@ circleData.clear = function() {
 }
 
 
-circleData.spin = function(time, numSpins, tween) {    
-    var framesPerSec = 60,
-        currIteration = 1,
-        numIterations = time * framesPerSec,
-        radianDelta = Math.PI * 2 * (numSpins / numIterations),
 
-    f = function() {
-        if(currIteration <= numIterations) {
-            circleData.draw(radianDelta * currIteration);
-            currIteration++;
-            setTimeout(f, 1000 / framesPerSec);
+circleData.spin = {
+    timer : null,
+    time : 0,
+    isSpin : false,
+    isShort : false,
+    currFrame : 0,
+    numFrames : 0,
+    framesPerSec : 60,
+    speed : 60,  //60 = 1 revolution / second.  If negative, goes counter-clockwise
+    numSpins : 0,
+    radianDelta : 0,
+    tween : null
+}
+
+circleData.spin.toggle = function() {
+    var s = circleData.spin;
+    if(s.isSpin) {
+        s.isSpin = false;
+        clearTimeout(s.timer);
+    } else {
+        s.isSpin = true;
+        s.isShort = false;
+        s.timer = setTimeout(circleData.spin.getNext, 1000 / s.framesPerSec);
+    }
+}
+
+circleData.spin.short = function(time) {    
+    var s = circleData.spin;
+
+    s.numIterations = time * framesPerSec;
+    s.currFrame = 0;
+    s.isShort = true;
+    s.isSpin = true;
+    s.getNext();
+}
+
+circleData.spin.getNext = function() {
+    var s = circleData.spin;
+
+    s.radianDelta += (2 * Math.PI / s.speed);
+
+    if(s.radianDelta > 0) {
+        while(s.radianDelta >= 2 * Math.PI) {
+            s.radianDelta -= 2 * Math.PI;
+        }
+    } else {
+        while(s.radianDelta <= -2 * Math.PI) {
+            s.radianDelta += 2 * Math.PI;
         }
     }
-    f();
+
+    circleData.draw(s.radianDelta);
+    if(s.isShort) {
+        currIteration++;
+    }
+    if(s.isSpin && (!s.isShort || currIteration < numIterations)) {
+        s.timer = setTimeout(circleData.spin.getNext, 1000 / s.framesPerSec);
+    }
 }
