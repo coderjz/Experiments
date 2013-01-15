@@ -60,6 +60,52 @@
             .colorpicker {
                 z-index : 3;
             }
+
+            /* Cannot find a background-url that works both locally and hosted.  Forcing URLs here.  Using double-class technique */
+            .colorpicker.colorpicker {
+            	background: url(lib/colorpicker/images/colorpicker_background.png);
+            }
+
+
+            .colorpicker_color.colorpicker_color div {
+                background: url(lib/colorpicker/images/colorpicker_overlay.png);
+            }
+
+            .colorpicker_color.colorpicker_color div div {
+                background: url(lib/colorpicker/images/colorpicker_select.gif);
+            }
+
+
+            .colorpicker_hue.colorpicker_hue div {
+                background: url(lib/colorpicker/images/colorpicker_indic.gif) left top;
+            }
+
+            .colorpicker_hex.colorpicker_hex  {
+                background: url(lib/colorpicker/images/colorpicker_hex.png) top;
+            }
+
+            .colorpicker_rgb_r.colorpicker_rgb_r  {
+                background-image: url(lib/colorpicker/images/colorpicker_rgb_r.png);
+            }
+            .colorpicker_rgb_g.colorpicker_rgb_g  {
+                background-image: url(lib/colorpicker/images/colorpicker_rgb_g.png);
+            }
+            .colorpicker_rgb_b.colorpicker_rgb_b  {
+                background-image: url(lib/colorpicker/images/colorpicker_rgb_b.png);
+            }
+            .colorpicker_hsb_h.colorpicker_hsb_h  {
+                background-image: url(lib/colorpicker/images/colorpicker_hsb_h.png);
+            }
+            .colorpicker_hsb_s.colorpicker_hsb_s  {
+                background-image: url(lib/colorpicker/images/colorpicker_hsb_s.png);
+            }
+            .colorpicker_hsb_b.colorpicker_hsb_b  {
+                background-image: url(lib/colorpicker/images/colorpicker_hsb_b.png);
+            }
+            .colorpicker_submit.colorpicker_submit  {
+                background: url(lib/colorpicker/images/colorpicker_submit.png) top;
+            }
+
         </style>
     </head>
     <body>
