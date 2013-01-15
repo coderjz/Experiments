@@ -2,7 +2,6 @@ var circleData = circleData || {};
 
 circleData.numSymbols = 6;
 circleData.symbolRadius = 30;
-circleData.distanceBetween = 0;
 circleData.distanceOrigin = 20;
 circleData.shapeType = "circle";
 circleData.startColor = {"r" : 255, "g" : 255, "b" : 255};

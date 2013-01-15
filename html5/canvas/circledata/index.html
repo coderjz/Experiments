@@ -73,9 +73,6 @@
             <h3>Symbol Radius: <span id="spnRadius"></span></h3>
             <div id="sliderRadius"></div>
 
-            <h3>Distance Between symbols: <span id="spnDistanceBetween"></span></h3>
-            <div id="sliderDistanceBetween"></div>
-
             <h3>Extra distance from origin: <span id="spnDistanceOrigin"></span></h3>
             <div id="sliderDistanceOrigin"></div>
             <br />
@@ -96,6 +93,7 @@
 
 
             <button id="btnRefresh">Refresh Circles</button>
+            <button id="btnSpin">Spin!</button>
         </div>
 
         <script type="text/javascript" src="circledata.js"></script>
@@ -103,7 +101,7 @@
 
         <script type='text/javascript'>
             var symbols = { min : 1, max : 30, value : 6 };
-            var radius = { min : 10, max : 100, value : 30, step : 10 };
+            var radius = { min : 10, max : 40, value : 20, step : 2 };
             var distanceBetween = { min : 0, max : 20, value : 0, step : 1 };
             var distanceOrigin = { min : 0, max : 40, value : 20, step : 1 };
 
@@ -134,19 +132,6 @@
                 }); 
                 $("#spnRadius").text(radius.value);
           
-                $("#sliderDistanceBetween").slider({
-                    min : distanceBetween.min,
-                    max : distanceBetween.max,
-                    value : distanceBetween.value,
-                    step : distanceBetween.step || 1,
-                    slide : function (event, ui) {
-                        distanceBetween.value = parseInt(ui.value);
-                        $("#spnDistanceBetween").text(distanceBetween.value);
-                        circleData.distanceBetween = distanceBetween.value;
-                    }
-                }); 
-                $("#spnDistanceBetween").text(distanceBetween.value);
-
                 $("#sliderDistanceOrigin").slider({
                     min : distanceOrigin.min,
                     max : distanceOrigin.max,
@@ -193,6 +178,10 @@
 
                 $("#btnRefresh").click(function() {
                     circleData.draw();
+                });
+
+                $("#btnSpin").click(function() {
+                    circleData.spin(1, 1);
                 });
 
                 $("button").button();
