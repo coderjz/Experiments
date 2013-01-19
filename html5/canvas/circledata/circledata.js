@@ -8,6 +8,7 @@ circleData.startColor = {"r" : 255, "g" : 255, "b" : 255};
 circleData.endColor = {"r" : 255, "g" : 255, "b" : 255};
 circleData.canvas = null;
 circleData.context = null;
+circleData.isFluorescent = false;
 
 circleData.setCanvas = function(id) {
     var elem, c;
@@ -128,6 +129,16 @@ circleData.spin.short = function(time) {
 
 circleData.spin.getNext = function() {
     var s = circleData.spin;
+
+    if(circleData.isFluorescent) {
+        circleData.startColor = {"r" : Math.floor(Math.random() * 255),
+                                 "g" : Math.floor(Math.random() * 255),
+                                 "b" : Math.floor(Math.random() * 255) };
+
+        circleData.endColor = {"r" : Math.floor(Math.random() * 255),
+                               "g" : Math.floor(Math.random() * 255),
+                               "b" : Math.floor(Math.random() * 255) };
+    }
 
     s.radianDelta += (2 * Math.PI / s.speed);
 

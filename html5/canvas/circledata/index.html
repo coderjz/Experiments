@@ -136,6 +136,9 @@
             <h3 class="sameline">End Color: </h3>
             <input type="text" id='txtEndColor' value="#2A24C9">
             <br />
+            <h3 class="sameline">Flourescent Mode: </h3><input type="checkbox" id='chkFluorescent'>
+            <br />
+            
 
 
             <button id="btnRefresh">Refresh Circles</button>
@@ -228,6 +231,10 @@
 
                 $("#btnSpin").click(function() {
                     circleData.spin.toggle();
+                });
+
+                $("#chkFluorescent").click( function(){
+                        circleData.isFluorescent = $(this).is(':checked');
                 });
 
                 $("button").button();
