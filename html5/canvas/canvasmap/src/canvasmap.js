@@ -319,7 +319,17 @@ CanvasMap = function(id, undefined) {
 
     //Add a connection between nodes and render it immediately.
     this.addConnection = function(node1, node2) {
-        var c = [node1, node2];
+        var c = [node1, node2],
+            i;
+
+        //If connection already exists, don't add it again
+        for (i = 0; i < _connections.length; i++) {
+            if (_connections[i][0] == node1 && _connections[i][1] == node2) {
+                return;
+            }
+        }
+
+        
         _connections.push(c);
         _renderConnection([c]);
     }
@@ -421,19 +431,28 @@ CanvasMap = function(id, undefined) {
 
     //TODO: Calculate width/height properly, 
     //TODO: Look at more optimal way of passing alternate context to redraw (does this code have race condition??  Kinda not because JS is single-threaded...)
-    this.saveImage = function() {
+    this.saveImage = function () {
         var origContext = context;
         var c = document.createElement("canvas");
         var width = sizeX;
         var height = sizeY;
         c.width = width;
         c.height = height;
-        context = c.getContext("2d");
+
+        scrollbars.showHorizontal = false;
+        scrollbars.showVertical = false;
 
         _redraw.Do();
-        context = origContext;
+        context = c.getContext("2d");
 
-        window.open(c.toDataURL(), "Canvas Image Data", "left=100,top=100");
+
+        setTimeout(function () {
+            window.open(c.toDataURL(), "Canvas Image Data", "left=100,top=100");
+            scrollbars.showHorizontal = true;
+            scrollbars.showVertical = true;
+
+            context = origContext;
+        }, 1000);
     }
 
 
@@ -1041,18 +1060,18 @@ CanvasMap = function(id, undefined) {
     this.transitionSimpleTree = function(debug) {
         var _tmpNodes;  //Local copy of nodes.  
         var _tmpConns;  //Local copy of connections
-        var _ordersep = 50; //Horizontal separation
-        var _ranksep = 50; //Vertical separation
+        var _ordersep = 400; //Horizontal separation
+        var _ranksep = 100; //Vertical separation
         var _topMargin = 20;  //Top margin to display nodes from.
-        var _leftMargin = 20;  //Left margin to display nodes from.
-        var _numPasses = 2; //The number of passes (forwards or backwards) to make in the ordering algorithm.
+        var _leftMargin = 200;  //Left margin to display nodes from.
+        var _numPasses = 3; //The number of passes (forwards or backwards) to make in the ordering algorithm.
 
         //Create the local copy of data to be worked on.
         var createCopies = function() {
             var n1, n2, i, l;
             _tmpNodes = [];
             _tmpConns = [];
-            for(i = 0, l = nodes.length; i < l; i++) {
+            for(i = 0, l = _nodes.length; i < l; i++) {
                 _tmpNodes.push( { "rank" : -1,  //Rank is the ROW of this node
                                   "ranked" : false,  //Has node been ranked?
                                   "order" : 0,  //Order is the COLUMN of this node
@@ -1232,7 +1251,7 @@ CanvasMap = function(id, undefined) {
                 //If multiple nodes, then places nodes evenly offseted from parent in range [-n + 1, n - 1] where n is the number of children
                 distance = 2 * childNodes.length - 1;
                 start = -1 * childNodes.length + 1;
-                
+
                 for(i = 0, l = childNodes.length; i < l; i++) {
                     childNodes[i].order = currParent.order + start + Math.floor(i * (distance / childNodes.length));
                     processNodes.push(childNodes[i]);
