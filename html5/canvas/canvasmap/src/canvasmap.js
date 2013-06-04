@@ -34,8 +34,13 @@ CanvasMap = function(id, undefined) {
     var defaultStrokeStyle = "black";
     var defaultTextColor = "black";
     var defaultTextFont = "10px sans-serif";
+    var defaultFillStyle = "black";
 
     var resizeCanvasOnRedraw = true;
+
+    var drawConnectionTips = true;
+    var connectionTipLength = 20;
+    var connectionTipAngleDeg = 30;
 
 
     //Mathematical functions
@@ -79,6 +84,10 @@ CanvasMap = function(id, undefined) {
             }
 
             return {x: p1.x + (p2.x - p1.x) * t, y : p1.y + (p2.y - p1.y) * t};
+        },
+
+        toRadian : function(deg) {
+            return (deg % 360) * Math.PI / 180;
         }
     };
 
@@ -334,6 +343,26 @@ CanvasMap = function(id, undefined) {
         _renderConnection([c]);
     }
 
+    //Draw an arrow 
+    var _renderConnectionTip = function(l1, l2) {
+        var angleDeg = connectionTipAngleDeg,
+            length = connectionTipLength,
+            theta1 = that.math.toRadian(angleDeg),
+            theta2 = that.math.toRadian(-1 * angleDeg),
+            connAngle = getAngle(l1[0], l1[1], l2[0], l2[1]),
+            x1 = l2[0] - length * Math.cos(connAngle + theta1),
+            y1 = l2[1] - length * Math.sin(connAngle + theta1),
+            x2 = l2[0] - length * Math.cos(connAngle + theta2),
+            y2 = l2[1] - length * Math.sin(connAngle + theta2);
+
+        context.beginPath();  
+        context.moveTo(l2[0], l2[1]);  
+        context.lineTo(x1, y1);  
+        context.lineTo(x2, y2);  
+        context.fill(); 
+        context.closePath();
+    }
+
     //Render a connection between two nodes.
     var _renderConnection = function(connections) {
         var i, l, l1, l2, f1, f2, node1, node2;
@@ -346,11 +375,16 @@ CanvasMap = function(id, undefined) {
                 l1 = f1.connect.apply(node1, [node2.x, node2.y]);
                 l2 = f2.connect.apply(node2, [node1.x, node1.y]);
 
+
                 context.beginPath();
                 context.moveTo(l1[0], l1[1]);
                 context.lineTo(l2[0], l2[1]);
                 context.stroke();
                 context.closePath();
+
+                if(drawConnectionTips) {
+                    _renderConnectionTip(l1, l2);
+                }
             }
         }
     }
@@ -733,6 +767,7 @@ CanvasMap = function(id, undefined) {
             //Reset defaults
             context.lineWidth = defaultStrokeWidth;
             context.strokeStyle = defaultStrokeStyle;
+            context.fillStyle = defaultFillStyle;
         }
     }
 
